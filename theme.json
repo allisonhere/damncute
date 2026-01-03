@@ -1,0 +1,181 @@
+{
+  "version": 2,
+  "settings": {
+    "appearanceTools": true,
+    "layout": {
+      "contentSize": "min(70ch, 92vw)",
+      "wideSize": "min(1200px, 96vw)"
+    },
+    "color": {
+      "defaultPalette": false,
+      "palette": [
+        {
+          "name": "Base",
+          "slug": "base",
+          "color": "#f7f6f2"
+        },
+        {
+          "name": "Ink",
+          "slug": "ink",
+          "color": "#121212"
+        },
+        {
+          "name": "Mute",
+          "slug": "mute",
+          "color": "#6f6a62"
+        },
+        {
+          "name": "Accent",
+          "slug": "accent",
+          "color": "#ff6b4a"
+        },
+        {
+          "name": "Card",
+          "slug": "card",
+          "color": "#ffffff"
+        }
+      ]
+    },
+    "typography": {
+      "defaultFontSizes": false,
+      "fontFamilies": [
+        {
+          "name": "Grotesk",
+          "slug": "grotesk",
+          "fontFamily": "\"Space Grotesk\", \"Avenir Next\", \"Segoe UI\", sans-serif",
+          "fontFace": [
+            {
+              "fontFamily": "Space Grotesk",
+              "fontStyle": "normal",
+              "fontWeight": "400",
+              "fontDisplay": "swap",
+              "src": [
+                "file:./assets/fonts/space-grotesk-400.woff2"
+              ]
+            },
+            {
+              "fontFamily": "Space Grotesk",
+              "fontStyle": "normal",
+              "fontWeight": "600",
+              "fontDisplay": "swap",
+              "src": [
+                "file:./assets/fonts/space-grotesk-600.woff2"
+              ]
+            }
+          ]
+        }
+      ],
+      "fontSizes": [
+        {
+          "name": "XS",
+          "slug": "xs",
+          "size": "clamp(0.78rem, 0.74rem + 0.2vw, 0.9rem)"
+        },
+        {
+          "name": "S",
+          "slug": "s",
+          "size": "clamp(0.9rem, 0.85rem + 0.35vw, 1.05rem)"
+        },
+        {
+          "name": "M",
+          "slug": "m",
+          "size": "clamp(1rem, 0.95rem + 0.5vw, 1.2rem)"
+        },
+        {
+          "name": "L",
+          "slug": "l",
+          "size": "clamp(1.4rem, 1.2rem + 1.2vw, 2.2rem)"
+        },
+        {
+          "name": "XL",
+          "slug": "xl",
+          "size": "clamp(2.2rem, 1.7rem + 2.8vw, 4rem)"
+        }
+      ]
+    },
+    "spacing": {
+      "spacingSizes": [
+        {
+          "name": "XS",
+          "slug": "xs",
+          "size": "clamp(0.5rem, 0.4rem + 0.3vw, 0.7rem)"
+        },
+        {
+          "name": "S",
+          "slug": "s",
+          "size": "clamp(0.9rem, 0.8rem + 0.5vw, 1.2rem)"
+        },
+        {
+          "name": "M",
+          "slug": "m",
+          "size": "clamp(1.4rem, 1.2rem + 0.8vw, 2rem)"
+        },
+        {
+          "name": "L",
+          "slug": "l",
+          "size": "clamp(2rem, 1.6rem + 1.2vw, 3rem)"
+        },
+        {
+          "name": "XL",
+          "slug": "xl",
+          "size": "clamp(3rem, 2.4rem + 2vw, 4.5rem)"
+        }
+      ]
+    },
+    "custom": {
+      "radius": {
+        "sm": "12px",
+        "md": "20px",
+        "lg": "28px"
+      },
+      "shadow": {
+        "soft": "0 20px 50px rgba(18, 18, 18, 0.08)"
+      }
+    }
+  },
+  "styles": {
+    "color": {
+      "background": "var(--wp--preset--color--base)",
+      "text": "var(--wp--preset--color--ink)"
+    },
+    "typography": {
+      "fontFamily": "var(--wp--preset--font-family--grotesk)",
+      "lineHeight": "1.3"
+    },
+    "elements": {
+      "link": {
+        "color": {
+          "text": "var(--wp--preset--color--accent)"
+        },
+        "typography": {
+          "textDecoration": "none"
+        }
+      },
+      "heading": {
+        "typography": {
+          "fontWeight": "600",
+          "lineHeight": "1.05"
+        }
+      }
+    },
+    "blocks": {
+      "core/button": {
+        "border": {
+          "radius": "999px"
+        },
+        "color": {
+          "background": "var(--wp--preset--color--ink)",
+          "text": "var(--wp--preset--color--base)"
+        },
+        "typography": {
+          "fontWeight": "600"
+        }
+      },
+      "core/post-title": {
+        "typography": {
+          "fontSize": "var(--wp--preset--font-size--xl)"
+        }
+      }
+    }
+  }
+}

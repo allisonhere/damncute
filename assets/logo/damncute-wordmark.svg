@@ -1,0 +1,13 @@
+<svg width="840" height="220" viewBox="0 0 840 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dcGradient" x1="380" y1="40" x2="760" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C5CFF"/>
+      <stop offset="0.5" stop-color="#FF7AD9"/>
+      <stop offset="1" stop-color="#4FA3FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="840" height="220" fill="none"/>
+  <text x="30" y="140" font-family="'Space Grotesk','Avenir Next','Segoe UI',sans-serif" font-size="96" font-weight="600" letter-spacing="-2" fill="#121212">Damn</text>
+  <text x="380" y="140" font-family="'Space Grotesk','Avenir Next','Segoe UI',sans-serif" font-size="96" font-weight="600" letter-spacing="-2" fill="url(#dcGradient)">Cute</text>
+  <circle cx="764" cy="84" r="10" fill="url(#dcGradient)"/>
+</svg>
