@@ -19,6 +19,14 @@ if (!function_exists('damncute_setup')) {
 }
 add_action('after_setup_theme', 'damncute_setup');
 
+if (!function_exists('damncute_viewport_meta')) {
+    function damncute_viewport_meta(): void
+    {
+        echo '<meta name="viewport" content="width=device-width, initial-scale=1" />';
+    }
+}
+add_action('wp_head', 'damncute_viewport_meta', 1);
+
 if (!function_exists('damncute_assets')) {
     function damncute_assets(): void
     {
@@ -267,12 +275,20 @@ add_shortcode('damncute_pet_gallery', 'damncute_pet_gallery_shortcode');
 if (!function_exists('damncute_submit_cta_shortcode')) {
     function damncute_submit_cta_shortcode(array $atts = []): string
     {
+        $submit_page = get_page_by_path('submit');
+        if (
+            is_page('submit')
+            || (is_singular('page') && $submit_page && get_queried_object_id() === (int) $submit_page->ID)
+        ) {
+            return '';
+        }
+
         $atts = shortcode_atts([
             'variant' => 'button',
             'label' => __('Submit Your Pet', 'damncute'),
         ], $atts, 'damncute_submit_cta');
 
-        $url = home_url('/?dc_route=submit');
+        $url = home_url('/submit/');
         $label = esc_html($atts['label']);
 
         if ($atts['variant'] === 'floating') {
@@ -288,27 +304,216 @@ if (!function_exists('damncute_submit_cta_shortcode')) {
 }
 add_shortcode('damncute_submit_cta', 'damncute_submit_cta_shortcode');
 
-if (!function_exists('damncute_handle_pet_submission')) {
-    function damncute_handle_pet_submission(): void
+if (!function_exists('damncute_register_settings')) {
+    function damncute_register_settings(): void
     {
-        if (!isset($_POST['damncute_nonce']) || !wp_verify_nonce($_POST['damncute_nonce'], 'damncute_submit_pet')) {
-            wp_die(__('Invalid submission. Please try again.', 'damncute'));
+        register_setting('general', 'damncute_forminator_id', [
+            'type' => 'integer',
+            'sanitize_callback' => 'absint',
+            'default' => 39,
+        ]);
+
+        add_settings_field(
+            'damncute_forminator_id',
+            __('DamnCute Submit Form ID', 'damncute'),
+            'damncute_forminator_id_field',
+            'general'
+        );
+    }
+}
+add_action('admin_init', 'damncute_register_settings');
+
+if (!function_exists('damncute_forminator_id_field')) {
+    function damncute_forminator_id_field(): void
+    {
+        $value = (string) get_option('damncute_forminator_id', 39);
+        printf(
+            '<input type="number" min="1" name="damncute_forminator_id" value="%s" class="small-text" />',
+            esc_attr($value)
+        );
+        echo '<p class="description">' . esc_html__('Forminator form ID for the submit page.', 'damncute') . '</p>';
+    }
+}
+
+if (!function_exists('damncute_pet_submit_form_shortcode')) {
+    function damncute_pet_submit_form_shortcode(array $atts = []): string
+    {
+        $atts = shortcode_atts([
+            'id' => (string) get_option('damncute_forminator_id', 39),
+        ], $atts, 'damncute_pet_submit_form');
+
+        $form_id = absint($atts['id']);
+        if ($form_id <= 0) {
+            return '';
         }
 
-        if (!empty($_POST['dc_hp'])) {
-            wp_die(__('Submission rejected.', 'damncute'));
+        return do_shortcode(sprintf('[forminator_form id="%d"]', $form_id));
+    }
+}
+add_shortcode('damncute_pet_submit_form', 'damncute_pet_submit_form_shortcode');
+
+if (!function_exists('damncute_forminator_find_field')) {
+    function damncute_forminator_find_field(array $field_data_array, string $field_id): ?array
+    {
+        foreach ($field_data_array as $field) {
+            if (!empty($field['name']) && $field['name'] === $field_id) {
+                return $field;
+            }
+        }
+        return null;
+    }
+}
+
+if (!function_exists('damncute_forminator_text_value')) {
+    function damncute_forminator_text_value(array $field_data_array, string $field_id): string
+    {
+        $field = damncute_forminator_find_field($field_data_array, $field_id);
+        if (!$field || !isset($field['value']) || is_array($field['value'])) {
+            return '';
+        }
+        return trim((string) $field['value']);
+    }
+}
+
+if (!function_exists('damncute_forminator_select_labels')) {
+    function damncute_forminator_select_labels(array $field_data_array, string $field_id): array
+    {
+        $field = damncute_forminator_find_field($field_data_array, $field_id);
+        if (!$field || !isset($field['value'])) {
+            return [];
         }
 
-        $submitted_at = isset($_POST['dc_time']) ? (int) $_POST['dc_time'] : 0;
-        if ($submitted_at > 0 && (time() - $submitted_at) < 3) {
-            wp_die(__('Please take a moment before submitting.', 'damncute'));
+        $selected = is_array($field['value']) ? $field['value'] : [$field['value']];
+        $options = $field['field_array']['options'] ?? [];
+        $labels = [];
+
+        foreach ($options as $option) {
+            $option_value = isset($option['value']) ? (string) $option['value'] : (string) ($option['label'] ?? '');
+            if ($option_value === '') {
+                continue;
+            }
+            if (in_array($option_value, $selected, true)) {
+                $labels[] = isset($option['label']) ? (string) $option['label'] : $option_value;
+            }
         }
 
-        $pet_name = sanitize_text_field(wp_unslash($_POST['pet_name'] ?? ''));
-        $cute_description = sanitize_textarea_field(wp_unslash($_POST['cute_description'] ?? ''));
+        if (empty($labels)) {
+            foreach ($selected as $value) {
+                if ($value !== '') {
+                    $labels[] = (string) $value;
+                }
+            }
+        }
+
+        return $labels;
+    }
+}
+
+if (!function_exists('damncute_forminator_match_terms')) {
+    function damncute_forminator_match_terms(string $taxonomy, array $labels): array
+    {
+        if (empty($labels)) {
+            return [];
+        }
+
+        $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
+        if (is_wp_error($terms) || empty($terms)) {
+            return [];
+        }
+
+        $term_ids = [];
+        foreach ($labels as $label) {
+            $needle = sanitize_title($label);
+            foreach ($terms as $term) {
+                if ($term->slug === $needle || sanitize_title($term->name) === $needle) {
+                    $term_ids[] = (int) $term->term_id;
+                }
+            }
+        }
+
+        return array_values(array_unique($term_ids));
+    }
+}
+
+if (!function_exists('damncute_forminator_insert_attachment')) {
+    function damncute_forminator_insert_attachment(string $path, string $url, int $post_id): int
+    {
+        if ($path === '' || !file_exists($path)) {
+            return 0;
+        }
+
+        $filetype = wp_check_filetype(basename($path), null);
+        $attachment_id = wp_insert_attachment([
+            'guid' => $url !== '' ? $url : $path,
+            'post_mime_type' => $filetype['type'] ?? '',
+            'post_title' => preg_replace('/\.[^.]+$/', '', basename($path)),
+            'post_content' => '',
+            'post_status' => 'inherit',
+        ], $path, $post_id);
+
+        if (is_wp_error($attachment_id)) {
+            return 0;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        $metadata = wp_generate_attachment_metadata($attachment_id, $path);
+        if ($metadata) {
+            wp_update_attachment_metadata($attachment_id, $metadata);
+        }
+
+        return (int) $attachment_id;
+    }
+}
+
+if (!function_exists('damncute_forminator_upload_ids')) {
+    function damncute_forminator_upload_ids(array $field_data_array, string $field_id, int $post_id): array
+    {
+        $field = damncute_forminator_find_field($field_data_array, $field_id);
+        if (!$field || empty($field['value']['file'])) {
+            return [];
+        }
+
+        $file_data = $field['value']['file'];
+        $file_urls = $file_data['file_url'] ?? [];
+        $file_paths = $file_data['file_path'] ?? [];
+
+        if (!is_array($file_urls)) {
+            $file_urls = $file_urls !== '' ? [$file_urls] : [];
+        }
+        if (!is_array($file_paths)) {
+            $file_paths = $file_paths !== '' ? [$file_paths] : [];
+        }
+
+        $ids = [];
+        foreach ($file_urls as $index => $url) {
+            $url = (string) $url;
+            $attachment_id = $url !== '' ? attachment_url_to_postid($url) : 0;
+            if (!$attachment_id) {
+                $path = (string) ($file_paths[$index] ?? '');
+                $attachment_id = damncute_forminator_insert_attachment($path, $url, $post_id);
+            }
+            if ($attachment_id) {
+                $ids[] = (int) $attachment_id;
+            }
+        }
+
+        return $ids;
+    }
+}
+
+if (!function_exists('damncute_forminator_create_pet')) {
+    function damncute_forminator_create_pet($entry, int $form_id, array $field_data_array): void
+    {
+        $target_form_id = (int) get_option('damncute_forminator_id', 39);
+        if ($form_id !== $target_form_id) {
+            return;
+        }
+
+        $pet_name = sanitize_text_field(damncute_forminator_text_value($field_data_array, 'text-1'));
+        $cute_description = sanitize_textarea_field(damncute_forminator_text_value($field_data_array, 'textarea-1'));
 
         if ($pet_name === '' || $cute_description === '') {
-            wp_die(__('Missing required fields.', 'damncute'));
+            return;
         }
 
         $post_id = wp_insert_post([
@@ -319,15 +524,20 @@ if (!function_exists('damncute_handle_pet_submission')) {
         ], true);
 
         if (is_wp_error($post_id)) {
-            wp_die(__('Unable to save submission.', 'damncute'));
+            return;
         }
+
+        $age = sanitize_text_field(damncute_forminator_text_value($field_data_array, 'text-2'));
+        $owner_social = sanitize_text_field(damncute_forminator_text_value($field_data_array, 'text-3'));
+        $adoption_status_labels = damncute_forminator_select_labels($field_data_array, 'select-4');
+        $adoption_status = $adoption_status_labels[0] ?? '';
 
         $meta_map = [
             'pet_name' => $pet_name,
             'cute_description' => $cute_description,
-            'age' => sanitize_text_field(wp_unslash($_POST['age'] ?? '')),
-            'owner_social' => sanitize_text_field(wp_unslash($_POST['owner_social'] ?? '')),
-            'adoption_status' => sanitize_text_field(wp_unslash($_POST['adoption_status'] ?? '')),
+            'age' => $age,
+            'owner_social' => $owner_social,
+            'adoption_status' => $adoption_status,
         ];
 
         foreach ($meta_map as $key => $value) {
@@ -336,114 +546,30 @@ if (!function_exists('damncute_handle_pet_submission')) {
             }
         }
 
-        $tax_assignments = [
-            'species' => array_filter([(int) ($_POST['species'] ?? 0)]),
-            'breed' => array_filter([(int) ($_POST['breed'] ?? 0)]),
-            'vibe' => array_filter(array_map('intval', (array) ($_POST['vibe'] ?? []))),
-        ];
+        $species_ids = damncute_forminator_match_terms('species', damncute_forminator_select_labels($field_data_array, 'select-1'));
+        $breed_ids = damncute_forminator_match_terms('breed', damncute_forminator_select_labels($field_data_array, 'select-2'));
+        $vibe_ids = damncute_forminator_match_terms('vibe', damncute_forminator_select_labels($field_data_array, 'select-3'));
 
-        foreach ($tax_assignments as $taxonomy => $term_ids) {
-            if (!empty($term_ids)) {
-                wp_set_object_terms($post_id, $term_ids, $taxonomy, false);
-            }
+        if (!empty($species_ids)) {
+            wp_set_object_terms($post_id, $species_ids, 'species', false);
+        }
+        if (!empty($breed_ids)) {
+            wp_set_object_terms($post_id, $breed_ids, 'breed', false);
+        }
+        if (!empty($vibe_ids)) {
+            wp_set_object_terms($post_id, $vibe_ids, 'vibe', false);
         }
 
-        $gallery_ids = [];
-        if (!empty($_FILES['gallery']['name'][0])) {
-            require_once ABSPATH . 'wp-admin/includes/file.php';
-            require_once ABSPATH . 'wp-admin/includes/media.php';
-            require_once ABSPATH . 'wp-admin/includes/image.php';
-
-            $files = $_FILES['gallery'];
-            $count = min(count($files['name']), 5);
-            $total_bytes = 0;
-            for ($i = 0; $i < $count; $i++) {
-                if ($files['error'][$i] !== UPLOAD_ERR_OK) {
-                    continue;
-                }
-                $total_bytes += (int) $files['size'][$i];
-                if ($files['size'][$i] > 10 * 1024 * 1024) {
-                    continue;
-                }
-                if ($total_bytes > 30 * 1024 * 1024) {
-                    break;
-                }
-                $file = [
-                    'name' => $files['name'][$i],
-                    'type' => $files['type'][$i],
-                    'tmp_name' => $files['tmp_name'][$i],
-                    'error' => $files['error'][$i],
-                    'size' => $files['size'][$i],
-                ];
-
-                $check = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
-                $allowed = [
-                    'image/jpeg',
-                    'image/png',
-                    'image/webp',
-                    'image/gif',
-                    'video/mp4',
-                    'video/quicktime',
-                ];
-                if (empty($check['type']) || !in_array($check['type'], $allowed, true)) {
-                    continue;
-                }
-
-                $attachment_id = media_handle_sideload($file, $post_id);
-                if (!is_wp_error($attachment_id)) {
-                    $gallery_ids[] = $attachment_id;
-                    if (!has_post_thumbnail($post_id) && wp_attachment_is_image($attachment_id)) {
-                        set_post_thumbnail($post_id, $attachment_id);
-                    }
-                }
-            }
-        }
-
+        $gallery_ids = damncute_forminator_upload_ids($field_data_array, 'upload-1', $post_id);
         if (!empty($gallery_ids)) {
             update_post_meta($post_id, 'gallery', $gallery_ids);
-        }
-
-        $redirect = wp_get_referer() ?: home_url('/');
-        $redirect = add_query_arg('submitted', 'true', $redirect);
-        wp_safe_redirect($redirect);
-        exit;
-    }
-}
-add_action('admin_post_nopriv_damncute_submit_pet', 'damncute_handle_pet_submission');
-add_action('admin_post_damncute_submit_pet', 'damncute_handle_pet_submission');
-
-if (!function_exists('damncute_submit_rewrite')) {
-    function damncute_submit_rewrite(): void {
-        add_rewrite_rule('^submit/?$', 'index.php?dc_route=submit', 'top');
-    }
-}
-add_action('init', 'damncute_submit_rewrite');
-
-if (!function_exists('damncute_query_vars')) {
-    function damncute_query_vars(array $vars): array {
-        $vars[] = 'dc_route';
-        return $vars;
-    }
-}
-add_filter('query_vars', 'damncute_query_vars');
-
-if (!function_exists('damncute_template_include')) {
-    function damncute_template_include(string $template): string {
-        if (get_query_var('dc_route') === 'submit') {
-            $path = get_stylesheet_directory() . '/templates/submit-renderer.php';
-            if (file_exists($path)) {
-                return $path;
+            foreach ($gallery_ids as $attachment_id) {
+                if (wp_attachment_is_image($attachment_id)) {
+                    set_post_thumbnail($post_id, $attachment_id);
+                    break;
+                }
             }
         }
-        return $template;
     }
 }
-add_filter('template_include', 'damncute_template_include');
-
-// Force flush on next load (dev only, remove in prod)
-add_action('init', function() {
-    if (!get_option('damncute_flush_flag')) {
-        flush_rewrite_rules();
-        update_option('damncute_flush_flag', true);
-    }
-}, 999);
+add_action('forminator_custom_form_submit_before_set_fields', 'damncute_forminator_create_pet', 10, 3);
