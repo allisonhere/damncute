@@ -2,6 +2,21 @@
 <header class="wp-block-group alignwide dc-header">
     <!-- wp:site-title {"level":1,"className":"dc-logo"} /-->
 
-    <!-- wp:navigation {"className":"dc-nav","layout":{"type":"flex","justifyContent":"center"}} /-->
+    <!-- wp:html -->
+    <button class="dc-nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="dc-nav" aria-label="Open menu">
+        <span class="dc-nav-toggle__bar"></span>
+        <span class="dc-nav-toggle__bar"></span>
+        <span class="dc-nav-toggle__bar"></span>
+    </button>
+    <!-- /wp:html -->
+
+    <!-- wp:navigation {"className":"dc-nav","layout":{"type":"flex","justifyContent":"center"},"overlayMenu":"never","ariaLabel":"Primary Navigation","anchor":"dc-nav"} -->
+        <!-- wp:navigation-link {"label":"Home","url":"/","kind":"custom"} /-->
+        <!-- wp:navigation-link {"label":"Submit Pet","url":"/submit/","kind":"custom","className":"dc-nav__cta"} /-->
+    <!-- /wp:navigation -->
+
+    <!-- wp:html -->
+    <div class="dc-nav-overlay" data-nav-overlay></div>
+    <!-- /wp:html -->
 </header>
 <!-- /wp:group -->
