@@ -48,15 +48,25 @@ body {
 
 .dc-header {
   position: relative;
-  padding: 2rem 0 0.5rem;
+  padding: 1.5rem 0;
   width: 100%;
-  max-width: min(1200px, 96vw);
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent; /* Ensure it's transparent */
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  background-color: transparent;
+}
+
+header.wp-block-template-part {
+  margin-inline: 0;
+  width: 100%;
+}
+
+header.wp-block-template-part .dc-header {
+  padding-left: 0;
 }
 
 header.wp-block-template-part,
@@ -68,38 +78,52 @@ header.wp-block-group {
   display: none;
 }
 
+
 .dc-logo a {
   display: block;
-  width: 100%;
-  height: 260px;
+  width: 280px;
+  height: 160px;
   background-image: url("../../logo.png");
   background-size: contain;
   background-repeat: no-repeat;
-  background-position: center bottom;
+  background-position: left center;
   text-indent: -9999px;
-  margin: 0 auto;
+  margin: 0;
+}
+
+.dc-header .wp-block-site-logo a,
+.dc-header .wp-block-site-logo img {
+  width: 280px;
+  height: 160px;
+}
+
+.dc-header .wp-block-site-logo img {
+  object-fit: contain;
+  display: block;
 }
 
 @media (min-width: 781px) {
   .dc-logo a {
-    height: 360px;
+    width: 280px;
+    height: 160px;
   }
 }
 
 .dc-logo {
-  width: 100%;
+  width: auto;
+  max-width: 280px;
   padding-bottom: 0;
-  margin-bottom: -2.5rem; /* Pull nav closer under logo */
+  margin: 0;
   flex: 0 0 auto;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   z-index: 10;
 }
 
 .dc-nav {
-  width: 100%;
+  width: auto;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   padding-top: 0;
   background: transparent;
@@ -118,12 +142,14 @@ header.wp-block-group {
 .dc-header .wp-block-navigation,
 header .wp-block-navigation {
   position: absolute;
-  top: 1.2rem;
+  top: 0;
   right: 0;
   width: auto;
   justify-content: flex-end;
-  align-self: flex-end;
+  align-self: flex-start;
   z-index: 20;
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
 .dc-nav--palette .wp-block-navigation__container,
@@ -230,49 +256,6 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   outline-offset: 2px;
 }
 
-@media (max-width: 780px) {
-  .dc-nav--palette,
-  .dc-header .wp-block-navigation,
-  header .wp-block-navigation {
-    position: absolute;
-    top: 0.6rem;
-    right: 0;
-    width: auto;
-    align-self: flex-end;
-    justify-content: flex-end;
-  }
-
-  .dc-nav--palette .wp-block-navigation__container,
-  .dc-header .wp-block-navigation .wp-block-navigation__container,
-  header .wp-block-navigation .wp-block-navigation__container {
-    justify-content: flex-end;
-    width: auto;
-    flex-wrap: wrap;
-    padding: 0.55rem;
-    gap: 0.6rem;
-    max-width: min(92vw, 420px);
-  }
-
-  header .wp-block-navigation__responsive-container {
-    display: block !important;
-    position: static;
-    inset: auto;
-    background: transparent;
-    border: 0;
-    box-shadow: none;
-    padding: 0;
-  }
-
-  header .wp-block-navigation__responsive-container-content {
-    display: block;
-  }
-
-  header .wp-block-navigation__responsive-container-open,
-  header .wp-block-navigation__responsive-container-close {
-    display: none !important;
-  }
-}
-
 @media (max-width: 600px) {
   .dc-nav--palette .wp-block-navigation__container > li > a,
   .dc-header .wp-block-navigation .wp-block-navigation__container > li > a,
@@ -302,15 +285,16 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .dc-nav {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  width: auto;
 }
 
 .dc-nav .wp-block-navigation__container {
   flex-wrap: wrap;
   gap: 1.5rem;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .dc-cta-slot .wp-element-button {
@@ -326,24 +310,69 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
     flex-wrap: wrap;
     gap: 1rem;
   }
-  
-  .dc-logo {
-    margin-right: auto;
+}
+
+@media (max-width: 780px) {
+  header .wp-block-navigation__responsive-container-open,
+  header .wp-block-navigation__responsive-container-close {
+    position: fixed;
+    top: 0.6rem;
+    right: 0.75rem;
+    z-index: 80;
+    border-radius: 999px;
+    border: 1px solid var(--dc-border);
+    background: rgba(10, 10, 10, 0.75);
+    color: var(--dc-ink);
+    padding: 0.35rem 0.7rem;
   }
 
-  .dc-nav {
-    order: 3;
-    flex: 1 0 100%;
-    justify-content: flex-start;
-  }
-  
-  .dc-nav .wp-block-navigation__container {
-    justify-content: flex-start;
-    gap: 1rem;
+  header .wp-block-navigation__responsive-container:not(.is-menu-open) .wp-block-navigation__container {
+    display: none;
   }
 
-  .dc-cta-slot {
-    order: 2;
+  header .wp-block-navigation__responsive-container.is-menu-open {
+    background: rgba(10, 10, 10, 0.45) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  header .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    background: rgba(10, 10, 10, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.45),
+      0 0 22px rgba(255, 138, 107, 0.12);
+    padding: 0.75rem;
+    border-radius: 24px;
+    max-width: 320px;
+    margin: 2rem 0.5rem 0 auto !important;
+    transform: translateY(-40px);  // Do not fuck with this one codex
+  }
+
+  header .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > li > a {
+    width: 100%;
+    justify-content: center;
+    padding: 0.6rem 1.3rem;
+    font-size: 0.95rem;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+    box-shadow:
+      0 10px 26px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  header .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > li > a:hover,
+  header .wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__container > li > a:focus-visible {
+    transform: translateY(-2px);
+    filter: saturate(1.05);
+    box-shadow:
+      0 16px 34px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
   }
 }
 
@@ -1107,4 +1136,41 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   100% {
     background-position: -200% 0;
   }
+}
+
+.dc-header {
+  align-items: flex-start;
+}
+
+.dc-header .dc-logo {
+  width: clamp(180px, 22vw, 280px);
+  max-width: clamp(180px, 22vw, 280px);
+  margin: 0;
+  overflow: visible;
+  align-self: flex-start;
+}
+
+.dc-header .wp-block-site-logo {
+  margin: 0;
+}
+
+.dc-header .wp-block-site-logo img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.dc-header .dc-nav {
+  position: absolute;
+  top: 0.75rem;
+  right: 0;
+  width: auto;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.dc-header .dc-nav .wp-block-navigation__container {
+  justify-content: flex-end;
 }
