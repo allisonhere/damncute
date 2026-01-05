@@ -1,0 +1,1 @@
+[03-Jan-2026 13:32:41 UTC] PHP Warning:  mysqli_real_connect(): (HY000/2002): Operation not permitted in /home/allie/Projects/damncute/wp-includes/class-wpdb.php on line 1994

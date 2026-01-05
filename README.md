@@ -29,8 +29,8 @@
 - Trending section currently sorts by date; swap to `vote_count` once voting is live.
 
 ## Submit Form
-- The submit form uses `[damncute_pet_submit_form]` and saves `pets` posts as `pending`.
-- File uploads are limited to 5 items; first image becomes the featured image.
+- The submit form uses `[damncute_pet_submit_form]` and renders a Forminator form (ID set in Settings → General).
+- Submissions create `pets` posts as `pending` and map fields by Forminator element IDs (text-1, textarea-1, text-2, text-3, select-1..4, upload-1).
 
 ## Setup Notes
 - Create a page with slug `submit` to use `templates/page-submit.html`.

@@ -20,20 +20,33 @@
 
     <!-- wp:shortcode -->[damncute_pet_meta]<!-- /wp:shortcode -->
 
-    <!-- wp:group {"className":"dc-action-row","layout":{"type":"flex","flexWrap":"wrap"}} -->
-    <div class="wp-block-group dc-action-row">
-        <!-- wp:html -->
-        <div class="dc-actions">
-            <button class="dc-like" data-like-button type="button">❤️ <span data-like-count>0</span></button>
-            <button class="dc-share" data-share-button type="button">Share</button>
-        </div>
-        <!-- /wp:html -->
-    </div>
-    <!-- /wp:group -->
+    <!-- wp:shortcode -->[damncute_pet_sections]<!-- /wp:shortcode -->
 
-    <!-- wp:post-content {"className":"dc-pet-content"} /-->
+    <!-- wp:shortcode -->[damncute_pet_social]<!-- /wp:shortcode -->
 
     <!-- wp:shortcode -->[damncute_pet_gallery]<!-- /wp:shortcode -->
+
+    <!-- wp:shortcode -->[damncute_pet_related]<!-- /wp:shortcode -->
+
+    <!-- wp:shortcode -->[damncute_pet_most_loved]<!-- /wp:shortcode -->
+
+    <!-- wp:comments {"className":"dc-comments"} -->
+    <div class="wp-block-comments dc-comments">
+        <!-- wp:comments-title {"showPostTitle":false} /-->
+        <!-- wp:comment-template -->
+        <!-- wp:group {"className":"dc-comment","layout":{"type":"flex","orientation":"vertical"}} -->
+        <div class="wp-block-group dc-comment">
+            <!-- wp:comment-author-name /-->
+            <!-- wp:comment-date /-->
+            <!-- wp:comment-content /-->
+            <!-- wp:comment-reply-link /-->
+        </div>
+        <!-- /wp:group -->
+        <!-- /wp:comment-template -->
+        <!-- wp:comments-pagination {"paginationArrow":"arrow"} /-->
+        <!-- wp:post-comments-form /-->
+    </div>
+    <!-- /wp:comments -->
 </div>
 <!-- /wp:group -->
 

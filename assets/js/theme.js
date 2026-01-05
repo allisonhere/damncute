@@ -1,62 +1,119 @@
 (() => {
-  const getKey = () => `dc-like-${window.location.pathname}`;
+  const getReactionKey = (postId, reaction) =>
+    `dc-reaction-${postId}-${reaction}`;
 
-  const initLikes = () => {
-    const buttons = document.querySelectorAll('[data-like-button]');
-    if (!buttons.length) {
+  const initReactions = () => {
+    const groups = document.querySelectorAll('[data-reaction-group]');
+    if (!groups.length) {
       return;
     }
 
-    const stored = localStorage.getItem(getKey());
-    const hasLiked = stored === '1';
+    const apiRoot = window.damncuteData?.restUrl || '';
+    const apiNonce = window.damncuteData?.nonce || '';
+    if (!apiRoot) {
+      return;
+    }
 
-    buttons.forEach((button) => {
-      const countEl = button.querySelector('[data-like-count]');
-      if (!countEl) {
+    groups.forEach((group) => {
+      const postId = group.dataset.postId;
+      if (!postId) {
         return;
       }
 
-      if (hasLiked) {
-        button.classList.add('is-active');
-        countEl.textContent = '1';
-      }
+      group.querySelectorAll('[data-reaction-button]').forEach((button) => {
+        const reaction = button.dataset.reaction;
+        if (!reaction) {
+          return;
+        }
 
-      button.addEventListener('click', () => {
-        const active = button.classList.toggle('is-active');
-        countEl.textContent = active ? '1' : '0';
-        localStorage.setItem(getKey(), active ? '1' : '0');
+        const stored = localStorage.getItem(getReactionKey(postId, reaction));
+        if (stored === '1') {
+          button.classList.add('is-active');
+          button.setAttribute('aria-pressed', 'true');
+        }
+
+        button.addEventListener('click', async () => {
+          if (button.classList.contains('is-active')) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`${apiRoot}/reaction/${postId}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': apiNonce,
+              },
+              body: JSON.stringify({ reaction }),
+            });
+
+            if (!response.ok) {
+              return;
+            }
+
+            const data = await response.json();
+            const counts = data?.counts || {};
+            Object.keys(counts).forEach((key) => {
+              const countEl = group.querySelector(
+                `[data-reaction-count="${key}"]`
+              );
+              if (countEl) {
+                countEl.textContent = counts[key];
+              }
+            });
+
+            button.classList.add('is-active');
+            button.setAttribute('aria-pressed', 'true');
+            localStorage.setItem(getReactionKey(postId, reaction), '1');
+          } catch (error) {
+            // No-op: keep UI stable if request fails.
+          }
+        });
       });
     });
   };
 
   const initShare = () => {
-    document.addEventListener('click', async (event) => {
-      const button = event.target.closest('[data-share-button]');
-      if (!button) {
-        return;
-      }
+    const buttons = document.querySelectorAll('[data-share-platform]');
+    if (!buttons.length) {
+      return;
+    }
 
-      const shareData = {
-        title: document.title,
-        url: window.location.href,
-      };
+    const updateLabel = (button, label) => {
+      const original = button.dataset.originalLabel || button.textContent;
+      button.dataset.originalLabel = original;
+      button.textContent = label;
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1600);
+    };
 
-      try {
-        if (navigator.share) {
-          await navigator.share(shareData);
+    buttons.forEach((button) => {
+      button.addEventListener('click', async () => {
+        const platform = button.dataset.sharePlatform;
+        const container = button.closest('.dc-social');
+        const shareText =
+          container?.dataset.shareText || document.title || 'Damn Cute';
+        const shareUrl = container?.dataset.shareUrl || window.location.href;
+        const copyText = `${shareText} ${shareUrl}`;
+
+        if (platform === 'x') {
+          const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+            shareText
+          )}&url=${encodeURIComponent(shareUrl)}`;
+          window.open(intentUrl, '_blank', 'noopener,noreferrer');
           return;
         }
 
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(window.location.href);
-          button.textContent = 'Link copied';
-          setTimeout(() => {
-            button.textContent = 'Share';
-          }, 1800);
+        try {
+          if (navigator.clipboard) {
+            await navigator.clipboard.writeText(copyText);
+            updateLabel(button, 'Copied');
+          }
+        } catch (error) {
+          updateLabel(button, 'Copy failed');
         }
-      } catch (error) {
-        button.textContent = 'Share';
-      }
+      });
     });
   };
 
@@ -184,7 +241,7 @@
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    initLikes();
+    initReactions();
     initShare();
     initNav();
     initFloatingCta();
