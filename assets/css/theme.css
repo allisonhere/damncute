@@ -346,6 +346,21 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   }
 }
 
+@media (max-width: 900px) {
+  header .wp-block-navigation__responsive-container-open,
+  header .wp-block-navigation__responsive-container-close {
+    display: inline-flex !important;
+  }
+
+  header .wp-block-navigation__responsive-container:not(.is-menu-open) .wp-block-navigation__responsive-container-close {
+    display: none !important;
+  }
+
+  header .wp-block-navigation__responsive-container:not(.is-menu-open) .wp-block-navigation__container {
+    display: none;
+  }
+}
+
 @media (max-width: 780px) {
   header .wp-block-navigation__responsive-container-open,
   header .wp-block-navigation__responsive-container-close {

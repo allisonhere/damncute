@@ -905,11 +905,23 @@ if (!function_exists('damncute_register_reaction_routes')) {
         register_rest_route('damncute/v1', '/reaction/(?P<post_id>\d+)', [
             'methods' => 'POST',
             'callback' => 'damncute_handle_reaction',
-            'permission_callback' => '__return_true',
+            'permission_callback' => 'damncute_reaction_permission',
         ]);
     }
 }
 add_action('rest_api_init', 'damncute_register_reaction_routes');
+
+if (!function_exists('damncute_reaction_permission')) {
+    function damncute_reaction_permission(WP_REST_Request $request): bool
+    {
+        $nonce = (string) $request->get_header('X-WP-Nonce');
+        if ($nonce === '') {
+            return false;
+        }
+
+        return (bool) wp_verify_nonce($nonce, 'wp_rest');
+    }
+}
 
 if (!function_exists('damncute_handle_reaction')) {
     function damncute_handle_reaction(WP_REST_Request $request)
@@ -923,6 +935,16 @@ if (!function_exists('damncute_handle_reaction')) {
         $map = damncute_reaction_map();
         if (!isset($map[$reaction])) {
             return new WP_Error('damncute_invalid_reaction', __('Invalid reaction.', 'damncute'), ['status' => 400]);
+        }
+
+        $client_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if ($client_ip !== '') {
+            $rate_key = sprintf('dc_react_%d_%s', $post_id, md5($client_ip));
+            $count = (int) get_transient($rate_key);
+            if ($count >= 10) {
+                return new WP_Error('damncute_rate_limited', __('Slow down.', 'damncute'), ['status' => 429]);
+            }
+            set_transient($rate_key, $count + 1, MINUTE_IN_SECONDS);
         }
 
         $meta_key = 'reaction_' . $reaction;

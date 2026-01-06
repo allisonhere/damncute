@@ -107,7 +107,8 @@
 
         if (platform === 'facebook') {
           const shareUrlParam = encodeURIComponent(shareUrl);
-          const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${shareUrlParam}`;
+          const quoteParam = encodeURIComponent(shareText);
+          const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${shareUrlParam}&quote=${quoteParam}`;
           window.open(fbUrl, '_blank', 'noopener,noreferrer');
           return;
         }
