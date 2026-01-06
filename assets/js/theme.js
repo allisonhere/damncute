@@ -105,6 +105,13 @@
           return;
         }
 
+        if (platform === 'facebook') {
+          const shareUrlParam = encodeURIComponent(shareUrl);
+          const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${shareUrlParam}`;
+          window.open(fbUrl, '_blank', 'noopener,noreferrer');
+          return;
+        }
+
         try {
           if (navigator.clipboard) {
             await navigator.clipboard.writeText(copyText);
