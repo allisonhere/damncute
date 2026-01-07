@@ -605,6 +605,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   position: relative;
   overflow: hidden;
   width: 100%;
+  aspect-ratio: 4 / 5; /* Enforce uniform shape */
 }
 
 .dc-card__media a {
@@ -615,10 +616,14 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 .dc-card__media img {
   width: 100%;
-  height: auto;
+  height: 100%; /* Fill the container */
   display: block;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
+  object-fit: cover; /* No distortion */
+}
+
+/* Feature card overrides */
+.dc-card--feature .dc-card__media {
+  aspect-ratio: auto;
 }
 
 .dc-card--feature .dc-card__media img {
@@ -630,6 +635,10 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
     display: grid;
     grid-template-columns: 1.2fr 0.8fr;
     align-items: center;
+  }
+  
+  .dc-card--feature .dc-card__media {
+    height: 100%;
   }
   
   .dc-card--feature .dc-card__media img {

@@ -22,7 +22,8 @@ class Pet_Submission_Handler {
             'species'          => 'select-1',
             'breed'            => 'select-2',
             'vibe'             => 'select-3',
-            'gallery'          => 'upload-1',
+            'featured_image'   => 'upload-2', // New dedicated field
+            'gallery'          => 'upload-1', // Existing multi-upload field
         ];
 
         return apply_filters('damncute_submission_field_map', $defaults);
@@ -88,15 +89,20 @@ class Pet_Submission_Handler {
         $this->set_terms($post_id, 'breed', $field_data_array, $map['breed']);
         $this->set_terms($post_id, 'vibe', $field_data_array, $map['vibe']);
 
-        // Gallery & Thumbnail
-        $gallery_ids = $this->handle_uploads($field_data_array, $map['gallery'], $post_id);
-        if (!empty($gallery_ids)) {
-            update_post_meta($post_id, 'gallery', $gallery_ids);
-            foreach ($gallery_ids as $attachment_id) {
-                if (wp_attachment_is_image($attachment_id)) {
-                    set_post_thumbnail($post_id, $attachment_id);
-                    break;
-                }
+        // Handle Uploads
+        $featured_ids = $this->handle_uploads($field_data_array, $map['featured_image'], $post_id);
+        $gallery_ids  = $this->handle_uploads($field_data_array, $map['gallery'], $post_id);
+        
+        $all_ids = array_unique(array_merge($featured_ids, $gallery_ids));
+
+        if (!empty($all_ids)) {
+            update_post_meta($post_id, 'gallery', $all_ids);
+            
+            // Set Featured Image: Try dedicated field first, fallback to first gallery image
+            $thumbnail_id = !empty($featured_ids) ? $featured_ids[0] : (!empty($gallery_ids) ? $gallery_ids[0] : 0);
+            
+            if ($thumbnail_id && wp_attachment_is_image($thumbnail_id)) {
+                set_post_thumbnail($post_id, $thumbnail_id);
             }
         }
     }

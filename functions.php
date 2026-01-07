@@ -311,12 +311,14 @@ if (!function_exists('damncute_render_pet_card')) {
     {
         $title = get_the_title($post_id);
         $permalink = get_permalink($post_id);
-        $image = get_the_post_thumbnail($post_id, 'medium', ['class' => 'dc-card__media']);
+        // Remove class from img, put it on wrapper
+        $image = get_the_post_thumbnail($post_id, 'medium'); 
         $meta_html = $meta ? sprintf('<div class="dc-card__meta">%s</div>', esc_html($meta)) : '';
 
         return sprintf(
-            '<div class="dc-card dc-card--compact">%s<div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3>%s</div></div>',
-            $image !== '' ? sprintf('<a href="%s">%s</a>', esc_url($permalink), $image) : '',
+            '<div class="dc-card dc-card--compact"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3>%s</div></div>',
+            esc_url($permalink),
+            $image,
             esc_url($permalink),
             esc_html($title),
             $meta_html
