@@ -50,6 +50,37 @@ p:empty {
   animation: dc-particle-fly 0.8s ease-out forwards;
 }
 
+/* Infinite Scroll Loader */
+.dc-loader {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  width: 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dc-loader.is-visible {
+  opacity: 1;
+}
+
+.dc-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(124, 92, 255, 0.2);
+  border-top-color: var(--dc-button);
+  border-radius: 50%;
+  animation: dc-spin 0.8s linear infinite;
+}
+
+@keyframes dc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dc-card--anim {
+  animation: dc-fade-up 0.6s ease both;
+}
+
 @keyframes dc-particle-fly {
   0% {
     transform: translate(-50%, -50%) scale(0.5);
@@ -522,6 +553,11 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 .dc-hero {
   margin-top: -6rem;
   z-index: 1; /* Ensure it overlaps any lower elements */
+}
+
+/* Force spacing for the Pet of the Day card in the hero */
+.dc-hero .dc-card--feature {
+  margin-top: clamp(2rem, 4vw, 4rem) !important;
 }
 
 .dc-query {

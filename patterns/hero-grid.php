@@ -7,35 +7,30 @@
 ?>
 <!-- wp:group {"align":"wide","className":"dc-section dc-hero"} -->
 <div class="wp-block-group alignwide dc-section dc-hero">
-    <!-- wp:group {"layout":{"type":"constrained"}} -->
-    <div class="wp-block-group">
-        <!-- wp:heading {"level":2,"className":"dc-hero__title"} -->
-        <h3 class="dc-hero__title">The internet’s cutest pets.<span class="dc-hero__break">Zero fluff.</span></h3>
+    <!-- wp:group {"style":{"spacing":{"blockGap":"0"}},"layout":{"type":"flex","orientation":"vertical","justifyContent":"center","alignItems":"center"}} -->
+    <div class="wp-block-group" style="text-align:center;">
+        <!-- wp:heading {"textAlign":"center","level":2,"className":"dc-hero__title"} -->
+        <h2 class="wp-block-heading has-text-align-center dc-hero__title" style="text-align:center;">The internet’s cutest pets.<span class="dc-hero__break">Zero fluff.</span></h2>
         <!-- /wp:heading -->
 
-        <!-- wp:paragraph {"className":"dc-hero__lede"} -->
-        <p class="dc-hero__lede">A visual feed of pure serotonin. Scroll. Smile. Share.</p>
+        <!-- wp:paragraph {"align":"center","className":"dc-hero__lede"} -->
+        <p class="has-text-align-center dc-hero__lede" style="text-align:center;">A visual feed of pure serotonin. Scroll. Smile. Share.</p>
         <!-- /wp:paragraph -->
     </div>
     <!-- /wp:group -->
 
-    <!-- wp:query {"query":{"perPage":6,"postType":"pets","order":"desc","orderBy":"date"},"displayLayout":{"type":"flex","columns":3},"className":"dc-query"} -->
-    <div class="wp-block-query dc-query">
-        <!-- wp:post-template {"className":"dc-grid dc-grid--hero"} -->
-        <!-- wp:group {"className":"dc-card"} -->
-        <div class="wp-block-group dc-card">
-            <!-- wp:post-featured-image {"isLink":true,"sizeSlug":"large","className":"dc-card__media"} /-->
-            <!-- wp:group {"className":"dc-card__body"} -->
-            <div class="wp-block-group dc-card__body">
-                <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
-                <!-- wp:post-terms {"taxonomy":"species","className":"dc-card__meta"} /-->
-                <!-- wp:post-terms {"taxonomy":"vibe","className":"dc-card__meta"} /-->
-            </div>
-            <!-- /wp:group -->
-        </div>
-        <!-- /wp:group -->
-        <!-- /wp:post-template -->
+    <!-- wp:spacer {"height":"var:preset|spacing|m"} -->
+    <div style="height:var(--wp--preset--spacing--m)" aria-hidden="true" class="wp-block-spacer"></div>
+    <!-- /wp:spacer -->
+
+    <!-- wp:group {"style":{"spacing":{"margin":{"top":"3rem"}}}} -->
+    <div class="wp-block-group" style="margin-top:3rem;">
+        <?php
+        if (function_exists('damncute_pet_of_day_shortcode')) {
+            echo damncute_pet_of_day_shortcode();
+        }
+        ?>
     </div>
-    <!-- /wp:query -->
+    <!-- /wp:group -->
 </div>
 <!-- /wp:group -->

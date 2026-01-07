@@ -142,6 +142,88 @@
           return;
         }
 
+        if (platform === 'card') {
+            const originalText = button.textContent;
+            button.textContent = 'Generating...';
+            
+            try {
+                // Find pet data
+                const article = document.querySelector('article.type-pets');
+                if (!article) throw new Error('No pet found');
+                
+                const title = document.querySelector('.dc-pet-title')?.textContent || 'Damn Cute Pet';
+                const imgElement = document.querySelector('.dc-hero-media img');
+                const reactions = container.querySelector('[data-reaction-count="total"]')?.textContent || 
+                                  container.querySelector('[data-reaction-count="heart"]')?.textContent || 'Lots of';
+                
+                if (!imgElement) throw new Error('No image found');
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 1080;
+                canvas.height = 1920; // Story format
+
+                // Background
+                ctx.fillStyle = '#121212';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Image
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.src = imgElement.src;
+                
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+
+                // Draw Image (Cover)
+                const aspect = img.width / img.height;
+                let drawWidth = canvas.width;
+                let drawHeight = canvas.width / aspect;
+                let drawY = (canvas.height - drawHeight) / 2;
+                
+                if (drawHeight < canvas.height * 0.6) {
+                     drawHeight = canvas.height * 0.6;
+                     drawWidth = drawHeight * aspect;
+                     drawY = (canvas.height - drawHeight) / 2;
+                }
+
+                ctx.drawImage(img, (canvas.width - drawWidth) / 2, 200, drawWidth, drawHeight);
+
+                // Overlay Gradient
+                const grad = ctx.createLinearGradient(0, canvas.height - 600, 0, canvas.height);
+                grad.addColorStop(0, 'transparent');
+                grad.addColorStop(1, '#121212');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, canvas.height - 600, canvas.width, 600);
+
+                // Text
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#ff8a6b'; // Accent
+                ctx.font = 'bold 80px sans-serif';
+                ctx.fillText(title.toUpperCase(), canvas.width / 2, canvas.height - 400);
+
+                ctx.fillStyle = '#f7f6f2';
+                ctx.font = '40px sans-serif';
+                ctx.fillText(`${reactions} Reactions • damncute.com`, canvas.width / 2, canvas.height - 300);
+
+                // Download
+                const link = document.createElement('a');
+                link.download = `damncute-${title.replace(/\s+/g, '-').toLowerCase()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                button.textContent = 'Downloaded!';
+            } catch (e) {
+                console.error(e);
+                button.textContent = 'Failed';
+            }
+            
+            setTimeout(() => { button.textContent = originalText; }, 2000);
+            return;
+        }
+
         try {
           if (navigator.clipboard) {
             await navigator.clipboard.writeText(copyText);
@@ -277,10 +359,77 @@
     window.addEventListener('scroll', handleScroll, { passive: true });
   };
 
+  const initInfiniteScroll = () => {
+    const query = document.querySelector('.dc-query');
+    const loader = document.querySelector('.dc-loader');
+    const pagination = document.querySelector('.dc-pagination');
+    
+    if (!query || !loader) {
+      return;
+    }
+
+    // Hide standard pagination if JS is running
+    if (pagination) {
+      pagination.style.display = 'none';
+    }
+
+    let page = 1;
+    let loading = false;
+    let finished = false;
+
+    // Get filter params from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const species = urlParams.get('species') || '';
+    const vibe = urlParams.get('vibe') || '';
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !loading && !finished) {
+        loading = true;
+        loader.classList.add('is-visible');
+        page++;
+
+        const apiUrl = `${window.damncuteData.restUrl}/page/${page}?species=${species}&vibe=${vibe}`;
+
+        fetch(apiUrl)
+          .then(res => res.json())
+          .then(data => {
+            if (data.html) {
+              const temp = document.createElement('div');
+              temp.innerHTML = data.html;
+              
+              // Find the grid container (first div inside post-template usually)
+              // But WP Query block structure is tricky. We look for the parent of existing cards.
+              const grid = query.querySelector('.dc-grid') || query.querySelector('.wp-block-post-template');
+              if (grid) {
+                while (temp.firstChild) {
+                  grid.appendChild(temp.firstChild);
+                }
+              }
+            }
+
+            if (!data.has_next) {
+              finished = true;
+              loader.style.display = 'none';
+            }
+          })
+          .catch(() => {
+            finished = true; // Stop trying on error
+          })
+          .finally(() => {
+            loading = false;
+            loader.classList.remove('is-visible');
+          });
+      }
+    }, { rootMargin: '200px' });
+
+    observer.observe(loader);
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     initReactions();
     initShare();
     initNav();
     initFloatingCta();
+    initInfiniteScroll();
   });
 })();

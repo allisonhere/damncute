@@ -364,13 +364,14 @@ if (!function_exists('damncute_pet_social_shortcode')) {
         }
 
         return sprintf(
-            '<div class="dc-social" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="tiktok">TikTok</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button></div></div>',
+            '<div class="dc-social" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="tiktok">TikTok</button><button class="dc-share-button" type="button" data-share-platform="card">%s</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button></div></div>',
             esc_attr($share_text),
             esc_url($share_url),
             $submitter,
             $post_id,
             $reaction_buttons,
             esc_html__('Share', 'damncute'),
+            esc_html__('Card', 'damncute'),
             esc_html__('Copy link', 'damncute')
         );
     }
@@ -756,10 +757,81 @@ if (!function_exists('damncute_handle_reaction')) {
     }
 }
 
+if (!function_exists('damncute_register_infinite_scroll')) {
+    function damncute_register_infinite_scroll(): void {
+        register_rest_route('damncute/v1', '/page/(?P<page>\d+)', [
+            'methods' => 'GET',
+            'callback' => 'damncute_get_page_html',
+            'permission_callback' => '__return_true',
+        ]);
+    }
+}
+add_action('rest_api_init', 'damncute_register_infinite_scroll');
+
+if (!function_exists('damncute_get_page_html')) {
+    function damncute_get_page_html(WP_REST_Request $request) {
+        $page = absint($request['page']);
+        if ($page < 1) { $page = 1; }
+
+        $args = [
+            'post_type' => 'pets',
+            'post_status' => 'publish',
+            'paged' => $page,
+            'posts_per_page' => 12,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ];
+
+        // Handle filters (passed as query params ?species=X&vibe=Y)
+        $tax_query = [];
+        $species = sanitize_text_field($request->get_param('species') ?? '');
+        $vibe = sanitize_text_field($request->get_param('vibe') ?? '');
+
+        if ($species) {
+            $tax_query[] = ['taxonomy' => 'species', 'field' => 'slug', 'terms' => $species];
+        }
+        if ($vibe) {
+            $tax_query[] = ['taxonomy' => 'vibe', 'field' => 'slug', 'terms' => $vibe];
+        }
+        if (!empty($tax_query)) {
+            $tax_query['relation'] = 'AND';
+            $args['tax_query'] = $tax_query;
+        }
+
+        $query = new WP_Query($args);
+        $html = '';
+
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $post_id = get_the_ID();
+                $permalink = get_permalink();
+                $title = get_the_title();
+                $image = get_the_post_thumbnail($post_id, 'large', ['class' => 'dc-card__media']);
+                
+                // Replicate the standard card markup
+                $html .= sprintf(
+                    '<div class="dc-card dc-card--anim"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div>',
+                    esc_url($permalink),
+                    $image,
+                    esc_url($permalink),
+                    esc_html($title)
+                );
+            }
+            wp_reset_postdata();
+        }
+
+        return rest_ensure_response([
+            'html' => $html,
+            'has_next' => $page < $query->max_num_pages,
+        ]);
+    }
+}
+
 if (!function_exists('damncute_pet_of_day_shortcode')) {
     function damncute_pet_of_day_shortcode(): string
     {
-        $transient_key = 'damncute_pet_of_day';
+        $transient_key = 'damncute_pet_of_day_v2';
         $post_id = get_transient($transient_key);
 
         if (false === $post_id) {
