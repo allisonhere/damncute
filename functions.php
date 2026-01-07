@@ -672,232 +672,27 @@ if (!function_exists('damncute_pet_submit_form_shortcode')) {
 }
 add_shortcode('damncute_pet_submit_form', 'damncute_pet_submit_form_shortcode');
 
-if (!function_exists('damncute_forminator_find_field')) {
-    function damncute_forminator_find_field(array $field_data_array, string $field_id): ?array
-    {
-        foreach ($field_data_array as $field) {
-            if (!empty($field['name']) && $field['name'] === $field_id) {
-                return $field;
-            }
-        }
-        return null;
-    }
+// Initialize Autoloader
+// In a real Composer project, you'd require_once __DIR__ . '/vendor/autoload.php';
+// For now, we manually include our classes since we haven't run `composer install` yet.
+if (file_exists(__DIR__ . '/inc/class-pet-submission-handler.php')) {
+    require_once __DIR__ . '/inc/class-pet-submission-handler.php';
 }
 
-if (!function_exists('damncute_forminator_text_value')) {
-    function damncute_forminator_text_value(array $field_data_array, string $field_id): string
+if (!function_exists('damncute_init_submission_handler')) {
+    function damncute_init_submission_handler($entry, $form_id, $field_data_array): void
     {
-        $field = damncute_forminator_find_field($field_data_array, $field_id);
-        if (!$field || !isset($field['value']) || is_array($field['value'])) {
-            return '';
-        }
-        return trim((string) $field['value']);
-    }
-}
-
-if (!function_exists('damncute_forminator_select_labels')) {
-    function damncute_forminator_select_labels(array $field_data_array, string $field_id): array
-    {
-        $field = damncute_forminator_find_field($field_data_array, $field_id);
-        if (!$field || !isset($field['value'])) {
-            return [];
-        }
-
-        $selected = is_array($field['value']) ? $field['value'] : [$field['value']];
-        $options = $field['field_array']['options'] ?? [];
-        $labels = [];
-
-        foreach ($options as $option) {
-            $option_value = isset($option['value']) ? (string) $option['value'] : (string) ($option['label'] ?? '');
-            if ($option_value === '') {
-                continue;
+        try {
+            if (class_exists('DamnCute\Pet_Submission_Handler')) {
+                $handler = new DamnCute\Pet_Submission_Handler();
+                $handler->handle_submission($entry, $form_id, $field_data_array);
             }
-            if (in_array($option_value, $selected, true)) {
-                $labels[] = isset($option['label']) ? (string) $option['label'] : $option_value;
-            }
-        }
-
-        if (empty($labels)) {
-            foreach ($selected as $value) {
-                if ($value !== '') {
-                    $labels[] = (string) $value;
-                }
-            }
-        }
-
-        return $labels;
-    }
-}
-
-if (!function_exists('damncute_forminator_match_terms')) {
-    function damncute_forminator_match_terms(string $taxonomy, array $labels): array
-    {
-        if (empty($labels)) {
-            return [];
-        }
-
-        $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
-        if (is_wp_error($terms) || empty($terms)) {
-            return [];
-        }
-
-        $term_ids = [];
-        foreach ($labels as $label) {
-            $needle = sanitize_title($label);
-            foreach ($terms as $term) {
-                if ($term->slug === $needle || sanitize_title($term->name) === $needle) {
-                    $term_ids[] = (int) $term->term_id;
-                }
-            }
-        }
-
-        return array_values(array_unique($term_ids));
-    }
-}
-
-if (!function_exists('damncute_forminator_insert_attachment')) {
-    function damncute_forminator_insert_attachment(string $path, string $url, int $post_id): int
-    {
-        if ($path === '' || !file_exists($path)) {
-            return 0;
-        }
-
-        $filetype = wp_check_filetype(basename($path), null);
-        $attachment_id = wp_insert_attachment([
-            'guid' => $url !== '' ? $url : $path,
-            'post_mime_type' => $filetype['type'] ?? '',
-            'post_title' => preg_replace('/\.[^.]+$/', '', basename($path)),
-            'post_content' => '',
-            'post_status' => 'inherit',
-        ], $path, $post_id);
-
-        if (is_wp_error($attachment_id)) {
-            return 0;
-        }
-
-        require_once ABSPATH . 'wp-admin/includes/image.php';
-        $metadata = wp_generate_attachment_metadata($attachment_id, $path);
-        if ($metadata) {
-            wp_update_attachment_metadata($attachment_id, $metadata);
-        }
-
-        return (int) $attachment_id;
-    }
-}
-
-if (!function_exists('damncute_forminator_upload_ids')) {
-    function damncute_forminator_upload_ids(array $field_data_array, string $field_id, int $post_id): array
-    {
-        $field = damncute_forminator_find_field($field_data_array, $field_id);
-        if (!$field || empty($field['value']['file'])) {
-            return [];
-        }
-
-        $file_data = $field['value']['file'];
-        $file_urls = $file_data['file_url'] ?? [];
-        $file_paths = $file_data['file_path'] ?? [];
-
-        if (!is_array($file_urls)) {
-            $file_urls = $file_urls !== '' ? [$file_urls] : [];
-        }
-        if (!is_array($file_paths)) {
-            $file_paths = $file_paths !== '' ? [$file_paths] : [];
-        }
-
-        $ids = [];
-        foreach ($file_urls as $index => $url) {
-            $url = (string) $url;
-            $attachment_id = $url !== '' ? attachment_url_to_postid($url) : 0;
-            if (!$attachment_id) {
-                $path = (string) ($file_paths[$index] ?? '');
-                $attachment_id = damncute_forminator_insert_attachment($path, $url, $post_id);
-            }
-            if ($attachment_id) {
-                $ids[] = (int) $attachment_id;
-            }
-        }
-
-        return $ids;
-    }
-}
-
-if (!function_exists('damncute_forminator_create_pet')) {
-    function damncute_forminator_create_pet($entry, int $form_id, array $field_data_array): void
-    {
-        $target_form_id = (int) get_option('damncute_forminator_id', 39);
-        if ($form_id !== $target_form_id) {
-            return;
-        }
-
-        $pet_name = sanitize_text_field(damncute_forminator_text_value($field_data_array, 'text-1'));
-        $cute_description = sanitize_textarea_field(damncute_forminator_text_value($field_data_array, 'textarea-1'));
-
-        if ($pet_name === '' || $cute_description === '') {
-            return;
-        }
-
-        $post_id = wp_insert_post([
-            'post_type' => 'pets',
-            'post_title' => $pet_name,
-            'post_content' => $cute_description,
-            'post_status' => 'pending',
-            'comment_status' => 'open',
-        ], true);
-
-        if (is_wp_error($post_id)) {
-            return;
-        }
-
-        $age = sanitize_text_field(damncute_forminator_text_value($field_data_array, 'text-2'));
-        $owner_social = sanitize_text_field(damncute_forminator_text_value($field_data_array, 'text-3'));
-        $about = sanitize_textarea_field(damncute_forminator_text_value($field_data_array, 'textarea-2'));
-        $favorite_snack = sanitize_textarea_field(damncute_forminator_text_value($field_data_array, 'textarea-3'));
-        $adoption_status_labels = damncute_forminator_select_labels($field_data_array, 'select-4');
-        $adoption_status = $adoption_status_labels[0] ?? '';
-
-        $meta_map = [
-            'pet_name' => $pet_name,
-            'cute_description' => $cute_description,
-            'about' => $about,
-            'favorite_snack' => $favorite_snack,
-            'age' => $age,
-            'owner_social' => $owner_social,
-            'adoption_status' => $adoption_status,
-        ];
-
-        foreach ($meta_map as $key => $value) {
-            if ($value !== '') {
-                update_post_meta($post_id, $key, $value);
-            }
-        }
-
-        $species_ids = damncute_forminator_match_terms('species', damncute_forminator_select_labels($field_data_array, 'select-1'));
-        $breed_ids = damncute_forminator_match_terms('breed', damncute_forminator_select_labels($field_data_array, 'select-2'));
-        $vibe_ids = damncute_forminator_match_terms('vibe', damncute_forminator_select_labels($field_data_array, 'select-3'));
-
-        if (!empty($species_ids)) {
-            wp_set_object_terms($post_id, $species_ids, 'species', false);
-        }
-        if (!empty($breed_ids)) {
-            wp_set_object_terms($post_id, $breed_ids, 'breed', false);
-        }
-        if (!empty($vibe_ids)) {
-            wp_set_object_terms($post_id, $vibe_ids, 'vibe', false);
-        }
-
-        $gallery_ids = damncute_forminator_upload_ids($field_data_array, 'upload-1', $post_id);
-        if (!empty($gallery_ids)) {
-            update_post_meta($post_id, 'gallery', $gallery_ids);
-            foreach ($gallery_ids as $attachment_id) {
-                if (wp_attachment_is_image($attachment_id)) {
-                    set_post_thumbnail($post_id, $attachment_id);
-                    break;
-                }
-            }
+        } catch (Throwable $e) {
+            error_log('DamnCute Submission Error: ' . $e->getMessage());
         }
     }
 }
-add_action('forminator_custom_form_submit_before_set_fields', 'damncute_forminator_create_pet', 10, 3);
+add_action('forminator_custom_form_submit_before_set_fields', 'damncute_init_submission_handler', 10, 3);
 
 if (!function_exists('damncute_register_reaction_routes')) {
     function damncute_register_reaction_routes(): void

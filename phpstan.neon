@@ -1,0 +1,13 @@
+parameters:
+    level: 5
+    paths:
+        - functions.php
+        - inc/
+    bootstrapFiles:
+        - vendor/autoload.php
+    excludePaths:
+        - vendor/*
+    ignoreErrors:
+        # Ignore common WP constants/functions not loaded in static analysis
+        - '#Function [a-zA-Z0-9_]+ not found.#'
+        - '#Constant [a-zA-Z0-9_]+ not found.#'
