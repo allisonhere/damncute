@@ -601,6 +601,18 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   border: 1px solid var(--dc-border);
 }
 
+.dc-card__media {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.dc-card__media a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .dc-card__media img {
   width: 100%;
   height: auto;
@@ -636,12 +648,22 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .dc-card__body {
-  padding: clamp(1rem, 0.8rem + 0.6vw, 1.4rem);
+  padding: 4rem !important; /* Massive padding */
+  box-sizing: border-box;
+}
+
+.dc-card__title, 
+.dc-card__meta, 
+.dc-card__excerpt {
+  margin-left: 0 !important;
+  padding-left: 20px !important; /* Significant indent */
+  text-align: left !important;
+  display: block;
 }
 
 .dc-card__title {
   font-size: clamp(1.1rem, 0.9rem + 0.6vw, 1.4rem);
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.5rem;
   color: var(--dc-button);
 }
 

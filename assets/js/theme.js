@@ -160,7 +160,7 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 canvas.width = 1080;
-                canvas.height = 1920; // Story format
+                canvas.height = 2100; // Increased height from 1920 to fit text comfortably
 
                 // Background
                 ctx.fillStyle = '#121212';
@@ -199,36 +199,37 @@
 
                 // Draw Image (Cover)
 
-                // Draw Image (Cover)
-                const aspect = img.width / img.height;
-                let drawWidth = canvas.width;
-                let drawHeight = canvas.width / aspect;
-                let drawY = (canvas.height - drawHeight) / 2;
+                // Draw Image (Cover Top 75%)
+                const footerHeight = 550; // Dedicated space for text
+                const imageHeight = canvas.height - footerHeight;
                 
-                if (drawHeight < canvas.height * 0.6) {
-                     drawHeight = canvas.height * 0.6;
-                     drawWidth = drawHeight * aspect;
-                     drawY = (canvas.height - drawHeight) / 2;
-                }
+                const scale = Math.max(canvas.width / img.width, imageHeight / img.height);
+                const drawW = img.width * scale;
+                const drawH = img.height * scale;
+                
+                // Align image to top
+                const x = (canvas.width - drawW) / 2;
+                const y = 0; 
+                
+                ctx.drawImage(img, x, y, drawW, drawH);
 
-                ctx.drawImage(img, (canvas.width - drawWidth) / 2, 200, drawWidth, drawHeight);
-
-                // Overlay Gradient
-                const grad = ctx.createLinearGradient(0, canvas.height - 600, 0, canvas.height);
-                grad.addColorStop(0, 'transparent');
-                grad.addColorStop(1, '#121212');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, canvas.height - 600, canvas.width, 600);
+                // Draw Footer (Solid Black)
+                ctx.fillStyle = '#121212';
+                ctx.fillRect(0, imageHeight, canvas.width, footerHeight);
+                
+                // Add a subtle accent border between image and footer
+                ctx.fillStyle = '#ff8a6b';
+                ctx.fillRect(0, imageHeight, canvas.width, 4);
 
                 // Text
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#ff8a6b'; // Accent
-                ctx.font = 'bold 80px sans-serif';
-                ctx.fillText(title.toUpperCase(), canvas.width / 2, canvas.height - 400);
+                ctx.font = 'bold 72px sans-serif';
+                ctx.fillText(title.toUpperCase(), canvas.width / 2, imageHeight + 200);
 
                 ctx.fillStyle = '#f7f6f2';
-                ctx.font = '40px sans-serif';
-                ctx.fillText(`${reactions} Reactions • damncute.com`, canvas.width / 2, canvas.height - 300);
+                ctx.font = '42px sans-serif';
+                ctx.fillText(`${reactions} Reactions • damncute.com`, canvas.width / 2, imageHeight + 320);
 
                 // Download
                 const link = document.createElement('a');

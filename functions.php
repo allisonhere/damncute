@@ -315,7 +315,7 @@ if (!function_exists('damncute_render_pet_card')) {
         $meta_html = $meta ? sprintf('<div class="dc-card__meta">%s</div>', esc_html($meta)) : '';
 
         return sprintf(
-            '<div class="dc-card dc-card--compact">%s<h3 class="dc-card__title"><a href="%s">%s</a></h3>%s</div>',
+            '<div class="dc-card dc-card--compact">%s<div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3>%s</div></div>',
             $image !== '' ? sprintf('<a href="%s">%s</a>', esc_url($permalink), $image) : '',
             esc_url($permalink),
             esc_html($title),
@@ -800,52 +800,68 @@ if (!function_exists('damncute_handle_reaction')) {
     }
 }
 
+if (!function_exists('damncute_pet_of_day_shortcode')) {
+    function damncute_pet_of_day_shortcode(): string
+    {
+        $transient_key = 'damncute_pet_of_day_v2';
+        $post_id = get_transient($transient_key);
+
+        if (false === $post_id) {
+            $query = new WP_Query([
+                'post_type' => 'pets',
+                'posts_per_page' => 1,
+                'post_status' => 'publish',
+                'meta_key' => 'reaction_total',
+                'orderby' => 'meta_value_num',
+                'order' => 'DESC',
+                'date_query' => [
+                    [
+                        'after' => '1 week ago',
+                    ],
+                ],
+            ]);
+
+            if ($query->have_posts()) {
+                $post_id = $query->posts[0]->ID;
+                set_transient($transient_key, $post_id, HOUR_IN_SECONDS * 12);
+            } else {
+                // Fallback to random if no votes yet
+                $fallback = get_posts(['post_type' => 'pets', 'numberposts' => 1, 'orderby' => 'rand']);
+                $post_id = !empty($fallback) ? $fallback[0]->ID : 0;
+            }
+        }
+
+        if (!$post_id) {
+            return '';
+        }
+
+        // Render Card with "Hero" modifier
+        $title = get_the_title($post_id);
+        $permalink = get_permalink($post_id);
+        $image = get_the_post_thumbnail($post_id, 'large', ['class' => 'dc-card__media']);
+        $excerpt = get_the_excerpt($post_id);
+        
+        // Manual HTML construction to match the "Feature Card" look
+        $html = sprintf(
+            '<div class="dc-card dc-card--feature">
+                <div class="dc-card__media"><a href="%s">%s</a></div>
+                <div class="dc-card__body">
+                    <div class="dc-card__meta" style="color:var(--dc-accent); margin-bottom:0.5rem; font-weight:700;">PET OF THE DAY</div>
+                    <h3 class="dc-card__title" style="font-size:2rem;"><a href="%s">%s</a></h3>
+                    <div class="dc-card__excerpt">%s</div>
+                </div>
+            </div>',
+            esc_url($permalink),
+            $image,
+            esc_url($permalink),
+            esc_html($title),
+            esc_html($excerpt)
+        );
+
         return $html;
     }
 }
 add_shortcode('damncute_pet_of_day', 'damncute_pet_of_day_shortcode');
-
-if (!function_exists('damncute_filter_bar_shortcode')) {
-    function damncute_filter_bar_shortcode(): string
-    {
-        $species = get_terms(['taxonomy' => 'species', 'hide_empty' => true]);
-        $vibes = get_terms(['taxonomy' => 'vibe', 'hide_empty' => true]);
-        
-        $html = '<div class="dc-filter-bar-wrapper"><div class="dc-filter-bar">';
-        
-        // "All" Button
-        $html .= '<button type="button" class="dc-chip is-active" data-filter-reset>All</button>';
-        
-        if (!empty($species) && !is_wp_error($species)) {
-            foreach ($species as $term) {
-                $html .= sprintf(
-                    '<button type="button" class="dc-chip" data-filter-term="%s" data-filter-tax="species">%s</button>',
-                    esc_attr($term->slug),
-                    esc_html($term->name)
-                );
-            }
-        }
-        
-        // Separator or just keep mixing them? Let's add a visual gap if both exist.
-        if (!empty($species) && !empty($vibes)) {
-            $html .= '<span class="dc-filter-sep"></span>';
-        }
-
-        if (!empty($vibes) && !is_wp_error($vibes)) {
-            foreach ($vibes as $term) {
-                $html .= sprintf(
-                    '<button type="button" class="dc-chip" data-filter-term="%s" data-filter-tax="vibe">%s</button>',
-                    esc_attr($term->slug),
-                    esc_html($term->name)
-                );
-            }
-        }
-        
-        $html .= '</div></div>';
-        return $html;
-    }
-}
-add_shortcode('damncute_filter_bar', 'damncute_filter_bar_shortcode');
 
 if (!function_exists('damncute_register_infinite_scroll')) {
     function damncute_register_infinite_scroll(): void {
