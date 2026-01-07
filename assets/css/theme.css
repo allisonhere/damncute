@@ -40,6 +40,27 @@ p:empty {
   display: none;
 }
 
+/* Reaction Particles */
+.dc-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  font-size: 1.5rem;
+  user-select: none;
+  animation: dc-particle-fly 0.8s ease-out forwards;
+}
+
+@keyframes dc-particle-fly {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tw-tx), var(--tw-ty)) scale(1.2) rotate(var(--tw-tr));
+    opacity: 0;
+  }
+}
+
 /* Prevent full-width blocks from touching the browser edge. */
 .alignfull {
   margin-left: calc(-1 * var(--dc-gutter));

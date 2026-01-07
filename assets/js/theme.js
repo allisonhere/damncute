@@ -2,6 +2,29 @@
   const getReactionKey = (postId, reaction) =>
     `dc-reaction-${postId}-${reaction}`;
 
+  const createBurst = (x, y, emoji) => {
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div');
+      el.className = 'dc-particle';
+      el.textContent = emoji;
+
+      // Random direction and rotation
+      const tx = (Math.random() - 0.5) * 200;
+      const ty = (Math.random() - 0.5) * 200 - 50;
+      const tr = (Math.random() - 0.5) * 45;
+
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      el.style.setProperty('--tw-tx', `${tx}px`);
+      el.style.setProperty('--tw-ty', `${ty}px`);
+      el.style.setProperty('--tw-tr', `${tr}deg`);
+
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+  };
+
   const initReactions = () => {
     const groups = document.querySelectorAll('[data-reaction-group]');
     if (!groups.length) {
@@ -53,6 +76,12 @@
 
             const data = await response.json();
             const counts = data?.counts || {};
+            
+            // Trigger burst effect
+            const rect = button.getBoundingClientRect();
+            const emoji = button.textContent.split(' ')[0] || '❤️';
+            createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, emoji);
+
             Object.keys(counts).forEach((key) => {
               const countEl = group.querySelector(
                 `[data-reaction-count="${key}"]`
