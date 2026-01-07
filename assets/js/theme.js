@@ -144,15 +144,14 @@
 
         if (platform === 'card') {
             const originalText = button.textContent;
-            button.textContent = 'Generating...';
+            button.textContent = 'Designing...';
             
             try {
-                // Find pet data
-                const article = document.querySelector('article.type-pets');
-                if (!article) throw new Error('No pet found');
+                // Find pet data - relax selectors for block themes
+                const title = document.querySelector('.dc-pet-title')?.textContent || document.querySelector('h1')?.textContent || 'Damn Cute Pet';
+                const imgElement = document.querySelector('.dc-hero-media img') || document.querySelector('.wp-block-post-featured-image img');
                 
-                const title = document.querySelector('.dc-pet-title')?.textContent || 'Damn Cute Pet';
-                const imgElement = document.querySelector('.dc-hero-media img');
+                // Get reactions from the button container itself if possible
                 const reactions = container.querySelector('[data-reaction-count="total"]')?.textContent || 
                                   container.querySelector('[data-reaction-count="heart"]')?.textContent || 'Lots of';
                 
@@ -168,14 +167,37 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 // Image
+                const imageId = container.dataset.imageId;
+                let src = imgElement.src;
+                
+                if (imageId && window.damncuteData?.restUrl) {
+                    src = `${window.damncuteData.restUrl}/proxy-image?id=${imageId}`;
+                }
+                
+                // Fetch blob first to handle errors explicitly
+                let blob;
+                try {
+                    const response = await fetch(src);
+                    if (!response.ok) throw new Error(`Network error: ${response.status}`);
+                    blob = await response.blob();
+                } catch (err) {
+                    // Fallback to original source if proxy fails
+                    console.warn('Proxy failed, trying direct', err);
+                    const response = await fetch(imgElement.src);
+                    if (!response.ok) throw new Error('Direct load failed');
+                    blob = await response.blob();
+                }
+
                 const img = new Image();
-                img.crossOrigin = 'Anonymous';
-                img.src = imgElement.src;
+                const objectUrl = URL.createObjectURL(blob);
+                img.src = objectUrl;
                 
                 await new Promise((resolve, reject) => {
                     img.onload = resolve;
                     img.onerror = reject;
                 });
+
+                // Draw Image (Cover)
 
                 // Draw Image (Cover)
                 const aspect = img.width / img.height;
@@ -210,14 +232,14 @@
 
                 // Download
                 const link = document.createElement('a');
-                link.download = `damncute-${title.replace(/\s+/g, '-').toLowerCase()}.png`;
+                link.download = `damncute-poster-${title.replace(/\s+/g, '-').toLowerCase()}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
                 
-                button.textContent = 'Downloaded!';
+                button.textContent = 'Ready!';
             } catch (e) {
                 console.error(e);
-                button.textContent = 'Failed';
+                button.textContent = 'Retry?';
             }
             
             setTimeout(() => { button.textContent = originalText; }, 2000);
@@ -425,11 +447,79 @@
     observer.observe(loader);
   };
 
+  const initFilterBar = () => {
+    const bar = document.querySelector('.dc-filter-bar');
+    if (!bar) return;
+
+    const chips = bar.querySelectorAll('.dc-chip');
+    const query = document.querySelector('.dc-query');
+    const grid = query?.querySelector('.dc-grid') || query?.querySelector('.wp-block-post-template');
+    
+    if (!grid) return;
+
+    const handleFilter = (e) => {
+      const btn = e.currentTarget;
+      
+      // Update UI
+      chips.forEach(c => c.classList.remove('is-active'));
+      btn.classList.add('is-active');
+
+      // Update State
+      const term = btn.dataset.filterTerm || '';
+      const tax = btn.dataset.filterTax || '';
+      const url = new URL(window.location);
+      
+      url.searchParams.delete('species');
+      url.searchParams.delete('vibe');
+      
+      if (term) {
+        url.searchParams.set(tax, term);
+      }
+      
+      window.history.pushState({}, '', url);
+
+      // Reset Grid
+      grid.innerHTML = ''; // Clear items
+      
+      // Re-trigger infinite scroll
+      // We do this by scrolling to top (optional) or just letting the observer fire
+      // But since the grid is empty, the loader will be visible immediately.
+      
+      // Force reload by removing and re-adding infinite scroll logic?
+      // Better: Reload page? No, that's not "App-like".
+      // Best: Manually trigger the fetch logic or expose a reset method.
+      // For simplicity in this architecture, we will simply reload the page for now
+      // as it guarantees 100% compatibility with the complex WP Query state.
+      // OR, we can just call window.location.reload() which is fast enough for v1.
+      
+      // Actually, let's do it properly:
+      // We will rely on initInfiniteScroll to handle the "empty grid" state? 
+      // initInfiniteScroll runs once. We need to reset its internal state.
+      
+      // Quickest win for V1 without refactoring the whole scroller:
+      window.location.reload(); 
+    };
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', handleFilter);
+    });
+    
+    // Set active state from URL
+    const params = new URLSearchParams(window.location.search);
+    const activeTerm = params.get('species') || params.get('vibe');
+    if (activeTerm) {
+        chips.forEach(c => c.classList.remove('is-active'));
+        const match = bar.querySelector(`[data-filter-term="${activeTerm}"]`);
+        if (match) match.classList.add('is-active');
+    }
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     initReactions();
     initShare();
     initNav();
     initFloatingCta();
     initInfiniteScroll();
+    initFilterBar();
   });
 })();

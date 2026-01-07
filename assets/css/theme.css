@@ -108,13 +108,19 @@ p:empty {
   padding: 1.5rem 0;
   width: 100%;
   max-width: none;
-  margin: 0;
+  margin: 0 0 2rem; /* Added margin here */
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
   gap: 1.5rem;
   flex-wrap: wrap;
   background-color: transparent;
+}
+
+@media (min-width: 781px) {
+  .dc-header {
+    margin-bottom: 3.5rem; /* More space on desktop */
+  }
 }
 
 .post-type-archive-pets .dc-header,
@@ -1217,6 +1223,69 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   border: 1px solid var(--dc-border);
   background: rgba(255, 107, 74, 0.1);
   padding: 0.75rem 1rem;
+}
+
+/* Filter Bar */
+.dc-filter-bar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--dc-border);
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+  margin-inline: calc(-1 * var(--dc-gutter)); /* Full bleed */
+  padding-inline: var(--dc-gutter);
+}
+
+.dc-filter-bar {
+  display: flex;
+  gap: 0.8rem;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  padding-bottom: 2px; /* Prevent scrollbar clipping */
+  align-items: center;
+}
+
+.dc-filter-bar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.dc-filter-bar .dc-chip {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid var(--dc-border);
+  padding: 0.5rem 1.1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--dc-mute);
+  background: var(--dc-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dc-filter-bar .dc-chip:hover {
+  border-color: var(--dc-button);
+  color: var(--dc-ink);
+  transform: translateY(-1px);
+}
+
+.dc-filter-bar .dc-chip.is-active {
+  background: var(--dc-button);
+  color: var(--dc-button-ink);
+  border-color: var(--dc-button);
+  box-shadow: 0 4px 12px rgba(124, 92, 255, 0.3);
+}
+
+.dc-filter-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--dc-border);
+  flex: 0 0 auto;
+  margin: 0 0.5rem;
 }
 
 .dc-filters {

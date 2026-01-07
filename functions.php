@@ -352,6 +352,8 @@ if (!function_exists('damncute_pet_social_shortcode')) {
             );
         }
 
+        $image_id = get_post_thumbnail_id($post_id);
+
         $reaction_buttons = '';
         foreach (damncute_reaction_map() as $key => $emoji) {
             $reaction_buttons .= sprintf(
@@ -364,14 +366,15 @@ if (!function_exists('damncute_pet_social_shortcode')) {
         }
 
         return sprintf(
-            '<div class="dc-social" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="tiktok">TikTok</button><button class="dc-share-button" type="button" data-share-platform="card">%s</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button></div></div>',
+            '<div class="dc-social" data-image-id="%d" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="tiktok">TikTok</button><button class="dc-share-button" type="button" data-share-platform="card">%s</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button></div></div>',
+            (int) $image_id,
             esc_attr($share_text),
             esc_url($share_url),
             $submitter,
             $post_id,
             $reaction_buttons,
             esc_html__('Share', 'damncute'),
-            esc_html__('Card', 'damncute'),
+            esc_html__('Poster', 'damncute'),
             esc_html__('Copy link', 'damncute')
         );
     }
@@ -695,6 +698,46 @@ if (!function_exists('damncute_init_submission_handler')) {
 }
 add_action('forminator_custom_form_submit_before_set_fields', 'damncute_init_submission_handler', 10, 3);
 
+if (!function_exists('damncute_register_proxy_route')) {
+    function damncute_register_proxy_route(): void {
+        register_rest_route('damncute/v1', '/proxy-image', [
+            'methods' => 'GET',
+            'callback' => 'damncute_handle_proxy_image',
+            'permission_callback' => '__return_true', // Public endpoint
+        ]);
+    }
+}
+add_action('rest_api_init', 'damncute_register_proxy_route');
+
+if (!function_exists('damncute_handle_proxy_image')) {
+    function damncute_handle_proxy_image(WP_REST_Request $request) {
+        $image_id = absint($request->get_param('id'));
+        if (!$image_id) {
+            return new WP_Error('missing_id', 'Image ID required', ['status' => 400]);
+        }
+
+        $url = wp_get_attachment_image_url($image_id, 'large'); // Fetch official URL
+        if (!$url) {
+             return new WP_Error('invalid_image', 'Image not found', ['status' => 404]);
+        }
+
+        // Fetch image content safely
+        $response = wp_remote_get($url, ['timeout' => 10, 'sslverify' => false]);
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $content_type = wp_remote_retrieve_header($response, 'content-type');
+        $body = wp_remote_retrieve_body($response);
+
+        // Serve it back with CORS headers
+        header('Access-Control-Allow-Origin: *');
+        header('Content-Type: ' . $content_type);
+        echo $body;
+        exit;
+    }
+}
+
 if (!function_exists('damncute_register_reaction_routes')) {
     function damncute_register_reaction_routes(): void
     {
@@ -756,6 +799,53 @@ if (!function_exists('damncute_handle_reaction')) {
         ]);
     }
 }
+
+        return $html;
+    }
+}
+add_shortcode('damncute_pet_of_day', 'damncute_pet_of_day_shortcode');
+
+if (!function_exists('damncute_filter_bar_shortcode')) {
+    function damncute_filter_bar_shortcode(): string
+    {
+        $species = get_terms(['taxonomy' => 'species', 'hide_empty' => true]);
+        $vibes = get_terms(['taxonomy' => 'vibe', 'hide_empty' => true]);
+        
+        $html = '<div class="dc-filter-bar-wrapper"><div class="dc-filter-bar">';
+        
+        // "All" Button
+        $html .= '<button type="button" class="dc-chip is-active" data-filter-reset>All</button>';
+        
+        if (!empty($species) && !is_wp_error($species)) {
+            foreach ($species as $term) {
+                $html .= sprintf(
+                    '<button type="button" class="dc-chip" data-filter-term="%s" data-filter-tax="species">%s</button>',
+                    esc_attr($term->slug),
+                    esc_html($term->name)
+                );
+            }
+        }
+        
+        // Separator or just keep mixing them? Let's add a visual gap if both exist.
+        if (!empty($species) && !empty($vibes)) {
+            $html .= '<span class="dc-filter-sep"></span>';
+        }
+
+        if (!empty($vibes) && !is_wp_error($vibes)) {
+            foreach ($vibes as $term) {
+                $html .= sprintf(
+                    '<button type="button" class="dc-chip" data-filter-term="%s" data-filter-tax="vibe">%s</button>',
+                    esc_attr($term->slug),
+                    esc_html($term->name)
+                );
+            }
+        }
+        
+        $html .= '</div></div>';
+        return $html;
+    }
+}
+add_shortcode('damncute_filter_bar', 'damncute_filter_bar_shortcode');
 
 if (!function_exists('damncute_register_infinite_scroll')) {
     function damncute_register_infinite_scroll(): void {
