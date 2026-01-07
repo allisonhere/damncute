@@ -14,8 +14,13 @@
         <!-- wp:group {"className":"dc-card"} -->
         <div class="wp-block-group dc-card">
             <!-- wp:post-featured-image {"isLink":true,"sizeSlug":"large","className":"dc-card__media"} /-->
-            <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
-            <!-- wp:post-terms {"taxonomy":"species","className":"dc-card__meta"} /-->
+            
+            <!-- wp:group {"className":"dc-card__body","style":{"spacing":{"blockGap":"0"}}} -->
+            <div class="wp-block-group dc-card__body">
+                <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
+                <!-- wp:post-terms {"taxonomy":"species","className":"dc-card__meta"} /-->
+            </div>
+            <!-- /wp:group -->
         </div>
         <!-- /wp:group -->
         <!-- /wp:post-template -->

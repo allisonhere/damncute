@@ -125,20 +125,33 @@
           container?.dataset.shareText || document.title || 'Damn Cute';
         const shareUrl = container?.dataset.shareUrl || window.location.href;
         const copyText = `${shareText} ${shareUrl}`;
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
         if (platform === 'x') {
-          const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-            shareText
-          )}&url=${encodeURIComponent(shareUrl)}`;
-          window.open(intentUrl, '_blank', 'noopener,noreferrer');
+          const webUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+          if (isMobile) {
+             const appUrl = `twitter://post?message=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+             window.location = appUrl;
+             setTimeout(() => { window.location = webUrl; }, 1000);
+          } else {
+             window.open(webUrl, '_blank', 'noopener,noreferrer');
+          }
           return;
         }
 
         if (platform === 'facebook') {
           const shareUrlParam = encodeURIComponent(shareUrl);
           const quoteParam = encodeURIComponent(shareText);
-          const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${shareUrlParam}&quote=${quoteParam}`;
-          window.open(fbUrl, '_blank', 'noopener,noreferrer');
+          const webUrl = `https://www.facebook.com/sharer/sharer.php?u=${shareUrlParam}&quote=${quoteParam}`;
+          
+          if (isMobile) {
+             // Facebook scheme varies, but this is the standard intent
+             const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(webUrl)}`;
+             window.location = appUrl;
+             setTimeout(() => { window.location = webUrl; }, 1000);
+          } else {
+             window.open(webUrl, '_blank', 'noopener,noreferrer');
+          }
           return;
         }
 

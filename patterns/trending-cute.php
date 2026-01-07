@@ -17,7 +17,12 @@
         <!-- wp:group {"className":"dc-card dc-card--compact"} -->
         <div class="wp-block-group dc-card dc-card--compact">
             <!-- wp:post-featured-image {"isLink":true,"sizeSlug":"medium","className":"dc-card__media"} /-->
-            <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
+            
+            <!-- wp:group {"className":"dc-card__body","style":{"spacing":{"blockGap":"0"}}} -->
+            <div class="wp-block-group dc-card__body">
+                <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
+            </div>
+            <!-- /wp:group -->
         </div>
         <!-- /wp:group -->
         <!-- /wp:post-template -->

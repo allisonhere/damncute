@@ -657,7 +657,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .dc-card__body {
-  padding: 4rem !important; /* Massive padding */
+  padding: .2rem 4rem 2rem 1rem !important; /* Tighter top padding */
   box-sizing: border-box;
 }
 

@@ -27,6 +27,52 @@ if (!function_exists('damncute_viewport_meta')) {
 }
 add_action('wp_head', 'damncute_viewport_meta', 1);
 
+if (!function_exists('damncute_social_meta')) {
+    function damncute_social_meta(): void
+    {
+        $title = get_bloginfo('name');
+        $description = get_bloginfo('description');
+        $url = home_url('/');
+        $image_url = get_theme_file_uri('pic.png');
+
+        if (is_singular('pets')) {
+            $title = get_the_title();
+            $description = get_the_excerpt();
+            $url = get_permalink();
+            $image_id = get_post_thumbnail_id();
+            if ($image_id) {
+                $image_url = wp_get_attachment_image_url($image_id, 'large');
+            }
+        } elseif (is_archive()) {
+            $title = get_the_archive_title();
+            $url = get_pagenum_link();
+        }
+
+        if (!$description) {
+            $description = 'The internet’s cutest pets. Zero fluff. Just pure dopamine.';
+        }
+
+        // OpenGraph
+        printf('<meta property="og:type" content="website" />' . "\n");
+        printf('<meta property="og:title" content="%s" />' . "\n", esc_attr($title));
+        printf('<meta property="og:description" content="%s" />' . "\n", esc_attr($description));
+        printf('<meta property="og:url" content="%s" />' . "\n", esc_url($url));
+        printf('<meta property="og:site_name" content="%s" />' . "\n", esc_attr(get_bloginfo('name')));
+        if ($image_url) {
+            printf('<meta property="og:image" content="%s" />' . "\n", esc_url($image_url));
+        }
+
+        // Twitter Card
+        echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+        echo '<meta name="twitter:title" content="' . esc_attr($title) . '" />' . "\n";
+        echo '<meta name="twitter:description" content="' . esc_attr($description) . '" />' . "\n";
+        if ($image_url) {
+            echo '<meta name="twitter:image" content="' . esc_url($image_url) . '" />' . "\n";
+        }
+    }
+}
+add_action('wp_head', 'damncute_social_meta', 5);
+
 if (!function_exists('damncute_assets')) {
     function damncute_assets(): void
     {
