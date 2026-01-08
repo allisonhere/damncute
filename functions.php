@@ -769,20 +769,36 @@ if (!function_exists('damncute_handle_proxy_image')) {
              return new WP_Error('invalid_image', 'Image not found', ['status' => 404]);
         }
 
+        $parsed = wp_parse_url($url);
+        $site_host = wp_parse_url(home_url(), PHP_URL_HOST);
+        $uploads = wp_get_upload_dir();
+        $uploads_path = $uploads['baseurl'] ? wp_parse_url($uploads['baseurl'], PHP_URL_PATH) : '';
+        $url_path = $parsed['path'] ?? '';
+
+        if (($parsed['host'] ?? '') !== $site_host || ($uploads_path && strpos($url_path, $uploads_path) !== 0)) {
+            return new WP_Error('invalid_image_url', 'Image URL not allowed', ['status' => 400]);
+        }
+
+        if (!wp_attachment_is_image($image_id)) {
+            return new WP_Error('invalid_image_type', 'Image must be an image', ['status' => 400]);
+        }
+
         // Fetch image content safely
-        $response = wp_remote_get($url, ['timeout' => 10, 'sslverify' => false]);
+        $response = wp_safe_remote_get($url, ['timeout' => 10]);
         if (is_wp_error($response)) {
             return $response;
         }
 
         $content_type = wp_remote_retrieve_header($response, 'content-type');
         $body = wp_remote_retrieve_body($response);
+        if ($content_type && strpos($content_type, 'image/') !== 0) {
+            return new WP_Error('invalid_content_type', 'Unexpected content type', ['status' => 400]);
+        }
 
-        // Serve it back with CORS headers
-        header('Access-Control-Allow-Origin: *');
-        header('Content-Type: ' . $content_type);
-        echo $body;
-        exit;
+        return new WP_REST_Response($body, 200, [
+            'Access-Control-Allow-Origin' => '*',
+            'Content-Type' => $content_type ?: 'image/*',
+        ]);
     }
 }
 

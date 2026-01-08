@@ -223,21 +223,39 @@ class Pet_Submission_Handler {
             return 0;
         }
 
-        $filetype = wp_check_filetype(basename($path), null);
+        $real_path = realpath($path);
+        $uploads = wp_get_upload_dir();
+        $uploads_base = isset($uploads['basedir']) ? realpath($uploads['basedir']) : false;
+
+        if (!$real_path || !$uploads_base) {
+            return 0;
+        }
+
+        $uploads_base = rtrim($uploads_base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (strpos($real_path, $uploads_base) !== 0) {
+            return 0;
+        }
+
+        $filetype = wp_check_filetype(basename($real_path), null);
+        $mime = $filetype['type'] ?? '';
+        if ($mime === '' || !wp_match_mime_types('image|video', $mime)) {
+            return 0;
+        }
+
         $attachment_id = wp_insert_attachment([
             'guid'           => $url !== '' ? $url : $path,
-            'post_mime_type' => $filetype['type'] ?? '',
-            'post_title'     => preg_replace('/\.[^.]+$/', '', basename($path)),
+            'post_mime_type' => $mime,
+            'post_title'     => preg_replace('/\.[^.]+$/', '', basename($real_path)),
             'post_content'   => '',
             'post_status'    => 'inherit',
-        ], $path, $post_id);
+        ], $real_path, $post_id);
 
         if (is_wp_error($attachment_id)) {
             return 0;
         }
 
         require_once ABSPATH . 'wp-admin/includes/image.php';
-        $metadata = wp_generate_attachment_metadata($attachment_id, $path);
+        $metadata = wp_generate_attachment_metadata($attachment_id, $real_path);
         if ($metadata) {
             wp_update_attachment_metadata($attachment_id, $metadata);
         }
