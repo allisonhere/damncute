@@ -257,29 +257,26 @@ class Pet_Submission_Handler {
 
     private function handle_uploads(array $field_data_array, string $field_id, int $post_id): array {
         $field = $this->find_field($field_data_array, $field_id);
-        if (!$field || empty($field['value']['file'])) {
+        if (!$field || !isset($field['value'])) {
             return [];
         }
 
-        $file_data = $field['value']['file'];
-        $file_urls = $file_data['file_url'] ?? [];
-        $file_paths = $file_data['file_path'] ?? [];
-
-        if (!is_array($file_urls)) {
-            $file_urls = $file_urls !== '' ? [$file_urls] : [];
-        }
-        if (!is_array($file_paths)) {
-            $file_paths = $file_paths !== '' ? [$file_paths] : [];
+        $files = $this->normalize_upload_items($field['value']);
+        if (empty($files)) {
+            return [];
         }
 
         $ids = [];
-        foreach ($file_urls as $index => $url) {
-            $url = (string) $url;
+        foreach ($files as $file) {
+            $url = isset($file['url']) ? (string) $file['url'] : '';
             // Check if already attached (Forminator might return URL for existing media)
             $attachment_id = $url !== '' ? attachment_url_to_postid($url) : 0;
             
             if (!$attachment_id) {
-                $path = (string) ($file_paths[$index] ?? '');
+                $path = isset($file['path']) ? (string) $file['path'] : '';
+                if ($path === '' && $url !== '') {
+                    $path = $this->infer_upload_path($url);
+                }
                 $attachment_id = $this->insert_attachment($path, $url, $post_id);
             }
             
@@ -289,6 +286,100 @@ class Pet_Submission_Handler {
         }
 
         return $ids;
+    }
+
+    private function normalize_upload_items($value): array {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            }
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        if (isset($value['file'])) {
+            $value = $value['file'];
+        }
+
+        if (isset($value['files'])) {
+            $value = $value['files'];
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        if ($this->is_list_array($value)) {
+            $items = [];
+            foreach ($value as $item) {
+                if (is_string($item)) {
+                    $items[] = ['url' => $item, 'path' => ''];
+                    continue;
+                }
+                if (!is_array($item)) {
+                    continue;
+                }
+                $items[] = [
+                    'url' => (string) ($item['file_url'] ?? $item['url'] ?? ''),
+                    'path' => (string) ($item['file_path'] ?? $item['path'] ?? ''),
+                ];
+            }
+            return $items;
+        }
+
+        $urls = $value['file_url'] ?? $value['url'] ?? [];
+        $paths = $value['file_path'] ?? $value['path'] ?? [];
+
+        if (!is_array($urls)) {
+            $urls = $urls !== '' ? [$urls] : [];
+        }
+        if (!is_array($paths)) {
+            $paths = $paths !== '' ? [$paths] : [];
+        }
+
+        $max = max(count($urls), count($paths));
+        $items = [];
+        for ($index = 0; $index < $max; $index++) {
+            $items[] = [
+                'url' => isset($urls[$index]) ? (string) $urls[$index] : '',
+                'path' => isset($paths[$index]) ? (string) $paths[$index] : '',
+            ];
+        }
+
+        return array_values(array_filter($items, static function ($item): bool {
+            return $item['url'] !== '' || $item['path'] !== '';
+        }));
+    }
+
+    private function infer_upload_path(string $url): string {
+        $uploads = wp_get_upload_dir();
+        $baseurl = isset($uploads['baseurl']) ? (string) $uploads['baseurl'] : '';
+        $basedir = isset($uploads['basedir']) ? (string) $uploads['basedir'] : '';
+
+        if ($baseurl === '' || $basedir === '') {
+            return '';
+        }
+
+        if (strpos($url, $baseurl) !== 0) {
+            return '';
+        }
+
+        $relative = ltrim(substr($url, strlen($baseurl)), '/');
+        if ($relative === '') {
+            return '';
+        }
+
+        return rtrim($basedir, '/\\') . DIRECTORY_SEPARATOR . $relative;
+    }
+
+    private function is_list_array(array $value): bool {
+        if ($value === []) {
+            return true;
+        }
+        return array_keys($value) === range(0, count($value) - 1);
     }
 
     private function insert_attachment(string $path, string $url, int $post_id): int {
@@ -311,7 +402,8 @@ class Pet_Submission_Handler {
 
         $filetype = wp_check_filetype(basename($real_path), null);
         $mime = $filetype['type'] ?? '';
-        if ($mime === '' || !wp_match_mime_types('image|video', $mime)) {
+        $is_media = $mime !== '' && (strpos($mime, 'image/') === 0 || strpos($mime, 'video/') === 0);
+        if (!$is_media) {
             return 0;
         }
 
