@@ -1471,6 +1471,72 @@ if (!function_exists('damncute_breed_type_metabox')) {
 }
 add_action('add_meta_boxes', 'damncute_breed_type_metabox');
 
+if (!function_exists('damncute_pet_details_metabox')) {
+    function damncute_pet_details_metabox(): void
+    {
+        add_meta_box(
+            'damncute-pet-details',
+            __('Pet Details', 'damncute'),
+            'damncute_pet_details_metabox_render',
+            'pets',
+            'normal',
+            'high'
+        );
+    }
+}
+add_action('add_meta_boxes', 'damncute_pet_details_metabox');
+
+if (!function_exists('damncute_pet_details_metabox_render')) {
+    function damncute_pet_details_metabox_render(WP_Post $post): void
+    {
+        wp_nonce_field('damncute_pet_details_save', 'damncute_pet_details_nonce');
+
+        $pet_name = (string) get_post_meta($post->ID, 'pet_name', true);
+        $cute_description = (string) get_post_meta($post->ID, 'cute_description', true);
+        $age = (string) get_post_meta($post->ID, 'age', true);
+        $owner_social = (string) get_post_meta($post->ID, 'owner_social', true);
+        $about = (string) get_post_meta($post->ID, 'about', true);
+        $favorite_snack = (string) get_post_meta($post->ID, 'favorite_snack', true);
+        $adoption_status = (string) get_post_meta($post->ID, 'adoption_status', true);
+
+        $adoption_options = [
+            '' => __('— Select —', 'damncute'),
+            'Not listed' => __('Not listed', 'damncute'),
+            'Already adopted' => __('Already adopted', 'damncute'),
+            'Looking for a home' => __('Looking for a home', 'damncute'),
+            'In foster care' => __('In foster care', 'damncute'),
+        ];
+
+        echo '<p class="description">' . esc_html__('Use the main title and body for Pet Name and Cute Description, or edit them here to sync.', 'damncute') . '</p>';
+
+        echo '<p><label for="damncute_pet_name"><strong>' . esc_html__('Pet Name', 'damncute') . '</strong></label><br />';
+        echo '<input type="text" id="damncute_pet_name" name="damncute_pet_name" class="widefat" value="' . esc_attr($pet_name !== '' ? $pet_name : $post->post_title) . '" /></p>';
+
+        echo '<p><label for="damncute_cute_description"><strong>' . esc_html__('Cute Description', 'damncute') . '</strong></label>';
+        echo '<textarea id="damncute_cute_description" name="damncute_cute_description" rows="4" class="widefat">' . esc_textarea($cute_description !== '' ? $cute_description : $post->post_content) . '</textarea></p>';
+
+        echo '<p><label for="damncute_age"><strong>' . esc_html__('Age', 'damncute') . '</strong></label><br />';
+        echo '<input type="text" id="damncute_age" name="damncute_age" class="widefat" value="' . esc_attr($age) . '" /></p>';
+
+        echo '<p><label for="damncute_owner_social"><strong>' . esc_html__('Your Instagram/TikTok', 'damncute') . '</strong></label><br />';
+        echo '<input type="text" id="damncute_owner_social" name="damncute_owner_social" class="widefat" value="' . esc_attr($owner_social) . '" /></p>';
+
+        echo '<p><label for="damncute_about"><strong>' . esc_html__('About', 'damncute') . '</strong></label>';
+        echo '<textarea id="damncute_about" name="damncute_about" rows="4" class="widefat">' . esc_textarea($about) . '</textarea></p>';
+
+        echo '<p><label for="damncute_favorite_snack"><strong>' . esc_html__('Favorite Snack', 'damncute') . '</strong></label>';
+        echo '<textarea id="damncute_favorite_snack" name="damncute_favorite_snack" rows="2" class="widefat">' . esc_textarea($favorite_snack) . '</textarea></p>';
+
+        echo '<p><label for="damncute_adoption_status"><strong>' . esc_html__('Adoption Status', 'damncute') . '</strong></label><br />';
+        echo '<select id="damncute_adoption_status" name="damncute_adoption_status" class="widefat">';
+        foreach ($adoption_options as $value => $label) {
+            $selected = selected($adoption_status, $value, false);
+            echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . esc_html($label) . '</option>';
+        }
+        echo '</select></p>';
+    }
+}
+
 if (!function_exists('damncute_breed_type_options')) {
     function damncute_breed_type_options(array $species_slugs): array
     {
@@ -1573,6 +1639,67 @@ if (!function_exists('damncute_save_breed_type')) {
     }
 }
 add_action('save_post_pets', 'damncute_save_breed_type', 20, 2);
+
+if (!function_exists('damncute_save_pet_details')) {
+    function damncute_save_pet_details(int $post_id, WP_Post $post): void
+    {
+        if ($post->post_type !== 'pets') {
+            return;
+        }
+
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (!isset($_POST['damncute_pet_details_nonce']) || !wp_verify_nonce($_POST['damncute_pet_details_nonce'], 'damncute_pet_details_save')) {
+            return;
+        }
+
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        $pet_name = isset($_POST['damncute_pet_name']) ? sanitize_text_field((string) $_POST['damncute_pet_name']) : '';
+        $cute_description = isset($_POST['damncute_cute_description']) ? sanitize_textarea_field((string) $_POST['damncute_cute_description']) : '';
+
+        if ($pet_name !== '' && $pet_name !== $post->post_title) {
+            remove_action('save_post_pets', 'damncute_save_pet_details', 10);
+            wp_update_post([
+                'ID' => $post_id,
+                'post_title' => $pet_name,
+            ]);
+            add_action('save_post_pets', 'damncute_save_pet_details', 10, 2);
+        }
+
+        if ($cute_description !== $post->post_content) {
+            remove_action('save_post_pets', 'damncute_save_pet_details', 10);
+            wp_update_post([
+                'ID' => $post_id,
+                'post_content' => $cute_description,
+            ]);
+            add_action('save_post_pets', 'damncute_save_pet_details', 10, 2);
+        }
+
+        $meta_updates = [
+            'pet_name' => $pet_name,
+            'cute_description' => $cute_description,
+            'age' => isset($_POST['damncute_age']) ? sanitize_text_field((string) $_POST['damncute_age']) : '',
+            'owner_social' => isset($_POST['damncute_owner_social']) ? sanitize_text_field((string) $_POST['damncute_owner_social']) : '',
+            'about' => isset($_POST['damncute_about']) ? sanitize_textarea_field((string) $_POST['damncute_about']) : '',
+            'favorite_snack' => isset($_POST['damncute_favorite_snack']) ? sanitize_textarea_field((string) $_POST['damncute_favorite_snack']) : '',
+            'adoption_status' => isset($_POST['damncute_adoption_status']) ? sanitize_text_field((string) $_POST['damncute_adoption_status']) : '',
+        ];
+
+        foreach ($meta_updates as $key => $value) {
+            if ($value === '') {
+                delete_post_meta($post_id, $key);
+                continue;
+            }
+            update_post_meta($post_id, $key, $value);
+        }
+    }
+}
+add_action('save_post_pets', 'damncute_save_pet_details', 10, 2);
 
 if (!function_exists('damncute_pet_of_day_metabox_render')) {
     function damncute_pet_of_day_metabox_render(WP_Post $post): void
