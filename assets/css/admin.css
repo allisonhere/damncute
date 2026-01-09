@@ -181,3 +181,12 @@ select {
 #damncute-breed-table th.is-sorted.is-desc::after {
   content: " ▼";
 }
+.damncute-pet-details-metabox .widefat {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.damncute-pet-details-metabox #damncute_pet_name {
+  font-size: 14px;
+  padding: 6px 8px;
+}

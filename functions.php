@@ -1507,6 +1507,7 @@ if (!function_exists('damncute_pet_details_metabox_render')) {
             'In foster care' => __('In foster care', 'damncute'),
         ];
 
+        echo '<div class="damncute-pet-details-metabox">';
         echo '<p class="description">' . esc_html__('Use the main title and body for Pet Name and Cute Description, or edit them here to sync.', 'damncute') . '</p>';
 
         echo '<p><label for="damncute_pet_name"><strong>' . esc_html__('Pet Name', 'damncute') . '</strong></label><br />';
@@ -1534,6 +1535,7 @@ if (!function_exists('damncute_pet_details_metabox_render')) {
             echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . esc_html($label) . '</option>';
         }
         echo '</select></p>';
+        echo '</div>';
     }
 }
 
