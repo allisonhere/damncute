@@ -48,17 +48,22 @@ Last updated: 2025-03-08
   - Breed list table + filters
   - Breed type metabox (species-aware)
   - Delete all breeds action
+  - Forminator select field population for breed type fields (AKC/Designer/Purebred/Mixed)
 - `inc/class-pet-submission-handler.php`
   - Breed type mapping for dog/cat submissions
+  - Field ID map includes AKC/Designer/Purebred/Mixed selects
 - `assets/js/breed-manager.js`
   - Filter/sort logic
 - `assets/css/admin.css`
   - Breed manager filter styling
+- `assets/css/theme.css`
+  - Forminator select/Select2 dropdown styling for Safari/iOS
 
 ## Known issues / reminders
 - Import previously failed due to nested form; now separate Breed Manager page.
 - If Breed Type is included in CSV, dropdown can be ignored.
 - If using conditional Breed fields in Forminator, update handler with new field IDs.
+- If HTTPS loads show transparent selects, likely mixed-content or HTTPS config; ensure WP_HOME/WP_SITEURL use https.
 
 ## Next steps
 - Add Forminator field ID mapping once IDs are known.

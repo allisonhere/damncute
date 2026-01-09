@@ -1759,6 +1759,34 @@ if (!function_exists('damncute_init_submission_handler')) {
 }
 add_action('forminator_custom_form_submit_before_set_fields', 'damncute_init_submission_handler', 10, 3);
 
+if (!function_exists('damncute_filter_forminator_submit_errors')) {
+    function damncute_filter_forminator_submit_errors(array $errors, int $form_id, array $field_data_array): array
+    {
+        $target_form_id = (int) get_option('damncute_forminator_id', 39);
+        if ($form_id !== $target_form_id || empty($errors)) {
+            return $errors;
+        }
+
+        $dynamic_breed_fields = ['select-6', 'select-7', 'select-8', 'select-9'];
+        $filtered = [];
+        foreach ($errors as $error) {
+            if (!is_array($error)) {
+                $filtered[] = $error;
+                continue;
+            }
+            $field_id = (string) array_key_first($error);
+            $message = (string) ($error[$field_id] ?? '');
+            if (in_array($field_id, $dynamic_breed_fields, true) && $message === 'Selected value does not exist.') {
+                continue;
+            }
+            $filtered[] = $error;
+        }
+
+        return $filtered;
+    }
+}
+add_filter('forminator_custom_form_submit_errors', 'damncute_filter_forminator_submit_errors', 10, 3);
+
 if (!function_exists('damncute_get_breed_options_for_forminator')) {
     function damncute_get_breed_options_for_forminator(string $breed_type, string $species_slug): array
     {

@@ -27,8 +27,8 @@ class Pet_Submission_Handler {
             'breed_designer'   => 'select-7',
             'breed_purebred'   => 'select-8',
             'breed_mixed'      => 'select-9',
-            'featured_image'   => 'upload-2', // New dedicated field
-            'gallery'          => 'upload-1', // Existing multi-upload field
+            'featured_image'   => 'upload-1', // Required featured image field
+            'gallery'          => 'upload-2', // Additional photos field
         ];
 
         return apply_filters('damncute_submission_field_map', $defaults);
@@ -49,7 +49,6 @@ class Pet_Submission_Handler {
         }
 
         $map = $this->get_field_map();
-
         $pet_name = sanitize_text_field($this->get_text_value($field_data_array, $map['pet_name']));
         $cute_description = sanitize_textarea_field($this->get_text_value($field_data_array, $map['cute_description']));
 
