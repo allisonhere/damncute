@@ -396,6 +396,7 @@ if (!function_exists('damncute_term_filters_shortcode')) {
             if (empty($terms) || is_wp_error($terms)) {
                 continue;
             }
+            $html .= '<div class="dc-filters__group">';
             $html .= sprintf('<span class="dc-filters__label">%s</span>', esc_html($label));
             foreach ($terms as $term) {
                 $html .= sprintf(
@@ -404,6 +405,7 @@ if (!function_exists('damncute_term_filters_shortcode')) {
                     esc_html($term->name)
                 );
             }
+            $html .= '</div>';
         }
         $html .= '</div>';
 

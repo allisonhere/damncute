@@ -1309,6 +1309,153 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   color: var(--dc-ink);
 }
 
+.forminator-ui .forminator-file-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--dc-radius-sm);
+  background: rgba(20, 20, 20, 0.6);
+}
+
+.forminator-ui .forminator-file-upload > span {
+  color: var(--dc-ink);
+  opacity: 0.9;
+}
+
+.forminator-ui .forminator-file-upload .forminator-button-upload,
+.forminator-ui .forminator-file-upload .forminator-button-delete {
+  background: linear-gradient(135deg, #ff8a6b, #ff6b4a);
+  color: #111;
+  border: 0;
+  border-radius: var(--dc-radius-sm);
+  padding: 0.55rem 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.forminator-ui .forminator-button-upload:hover,
+.forminator-ui .forminator-button-delete:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(255, 107, 74, 0.35);
+}
+
+.forminator-ui .forminator-multi-upload {
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--dc-radius-sm);
+  padding: 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forminator-ui .forminator-multi-upload:hover {
+  border-color: rgba(255, 107, 74, 0.5);
+  box-shadow: 0 0 0 2px rgba(255, 107, 74, 0.2);
+}
+
+.forminator-ui .forminator-multi-upload::before {
+  content: "Drag & drop files";
+  display: block;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+  color: var(--dc-ink);
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.forminator-ui .forminator-multi-upload::after {
+  content: "or click to browse";
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 0.2rem;
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.forminator-ui .forminator-multi-upload .forminator-multi-upload-message p {
+  display: none;
+}
+
+.forminator-ui .forminator-multi-upload input[type="file"].forminator-input-file {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.forminator-ui .forminator-uploaded-files.forminator-has-files {
+  margin-top: 1rem;
+}
+
+.forminator-ui .forminator-uploaded-file {
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--dc-radius-sm);
+  padding: 0.75rem;
+}
+
+.forminator-ui .forminator-uploaded-file .forminator-uploaded-file--image,
+.forminator-ui .forminator-uploaded-file .forminator-uploaded-file--preview {
+  border-radius: 0.5rem;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.forminator-ui .forminator-uploaded-file .forminator-uploaded-file--text p {
+  color: var(--dc-ink);
+}
+
+.forminator-ui input[type="file"].forminator-input-file-required {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--dc-radius-sm);
+  background: rgba(20, 20, 20, 0.6);
+  color: #f7f6f2;
+}
+
+.forminator-ui input[type="file"].forminator-input-file-required::file-selector-button {
+  background: linear-gradient(135deg, #ff8a6b, #ff6b4a);
+  color: #111;
+  border: 0;
+  border-radius: var(--dc-radius-sm);
+  padding: 0.55rem 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: 0.75rem;
+  cursor: pointer;
+}
+
+.forminator-ui input[type="file"].forminator-input-file-required::file-selector-button:hover {
+  box-shadow: 0 8px 18px rgba(255, 107, 74, 0.35);
+}
+
+.forminator-ui .forminator-upload--remove {
+  margin-top: 0.5rem;
+  background: #2a2a2a;
+  color: #f7f6f2;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--dc-radius-sm);
+  padding: 0.4rem 0.85rem;
+}
+
 /* Remove Forminator's default field margin */
 .forminator-ui .forminator-field {
   margin-bottom: 0 !important;
@@ -1469,9 +1616,16 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 .dc-filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.dc-filters__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .dc-filters__label {
