@@ -1,13 +1,21 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
-<!-- wp:group {"align":"wide","className":"dc-section"} -->
-<div class="wp-block-group alignwide dc-section">
-    <!-- wp:query-title {"type":"archive","showPrefix":false} /-->
-</div>
-<!-- /wp:group -->
+<!-- wp:group {"align":"wide","className":"dc-section","style":{"spacing":{"padding":{"top":"0"}}}} -->
+<div class="wp-block-group alignwide dc-section" style="padding-top:0;">
+    <!-- wp:group {"style":{"spacing":{"blockGap":"0.5rem","margin":{"bottom":"3rem"}}}} -->
+    <div class="wp-block-group" style="margin-bottom:3rem;">
+        <!-- wp:query-title {"type":"archive","showPrefix":false,"className":"dc-pet-title"} /-->
+        
+        <!-- wp:paragraph {"className":"dc-hero__lede","style":{"typography":{"fontSize":"1.2rem"},"color":"var:preset|color|mute"}} -->
+        <p class="dc-hero__lede" style="font-size:1.2rem; color:var(--dc-mute);">All the good boys and girls. Filter by vibe, species, or just scroll for serotonin.</p>
+        <!-- /wp:paragraph -->
+    </div>
+    <!-- /wp:group -->
 
-<!-- wp:group {"align":"wide","className":"dc-section"} -->
-<div class="wp-block-group alignwide dc-section">
+    <!-- wp:shortcode -->
+    [damncute_term_filters]
+    <!-- /wp:shortcode -->
+
     <!-- wp:query {"query":{"perPage":12,"postType":"pets","order":"desc","orderBy":"date"},"displayLayout":{"type":"flex","columns":3},"className":"dc-query"} -->
     <div class="wp-block-query dc-query">
         <!-- wp:post-template {"className":"dc-grid"} -->

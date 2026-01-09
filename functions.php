@@ -103,6 +103,36 @@ if (!function_exists('damncute_assets')) {
 }
 add_action('wp_enqueue_scripts', 'damncute_assets');
 
+if (!function_exists('damncute_admin_assets')) {
+    function damncute_admin_assets(): void
+    {
+        $theme_version = wp_get_theme()->get('Version');
+        $css_path = get_theme_file_path('assets/css/admin.css');
+        $js_path = get_theme_file_path('assets/js/breed-manager.js');
+
+        wp_enqueue_style(
+            'damncute-admin',
+            get_theme_file_uri('assets/css/admin.css'),
+            [],
+            file_exists($css_path) ? (string) filemtime($css_path) : $theme_version
+        );
+
+        if (function_exists('get_current_screen')) {
+            $screen = get_current_screen();
+            if ($screen && $screen->id === 'pets_page_damncute-breed-manager') {
+                wp_enqueue_script(
+                    'damncute-breed-manager',
+                    get_theme_file_uri('assets/js/breed-manager.js'),
+                    [],
+                    file_exists($js_path) ? (string) filemtime($js_path) : $theme_version,
+                    true
+                );
+            }
+        }
+    }
+}
+add_action('admin_enqueue_scripts', 'damncute_admin_assets');
+
 if (!function_exists('damncute_register_content_types')) {
     function damncute_register_content_types(): void
     {
@@ -140,7 +170,7 @@ if (!function_exists('damncute_register_content_types')) {
                 'singular_name' => __('Breed', 'damncute'),
             ],
             'public' => true,
-            'hierarchical' => true,
+            'hierarchical' => false,
             'show_in_rest' => true,
             'rewrite' => ['slug' => 'breed'],
         ]);
@@ -159,6 +189,128 @@ if (!function_exists('damncute_register_content_types')) {
 }
 add_action('init', 'damncute_register_content_types');
 
+if (!function_exists('damncute_breed_species_field')) {
+    function damncute_breed_species_field(?WP_Term $term = null): void
+    {
+        $species_terms = get_terms(['taxonomy' => 'species', 'hide_empty' => false]);
+        if (is_wp_error($species_terms) || empty($species_terms)) {
+            echo '<p>' . esc_html__('Create species terms first.', 'damncute') . '</p>';
+            return;
+        }
+
+        $selected = [];
+        if ($term) {
+            $stored = get_term_meta($term->term_id, '_damncute_breed_species', true);
+            $selected = is_array($stored) ? array_map('absint', $stored) : [];
+        }
+
+        wp_nonce_field('damncute_breed_species', 'damncute_breed_species_nonce');
+
+        echo '<div class="form-field term-breed-species-wrap">';
+        echo '<label>' . esc_html__('Applies to species', 'damncute') . '</label>';
+        echo '<p class="description">' . esc_html__('Select which species this breed belongs to.', 'damncute') . '</p>';
+        echo '<div style="margin-top:6px;">';
+        foreach ($species_terms as $species) {
+            $checked = in_array((int) $species->term_id, $selected, true) ? 'checked' : '';
+            echo '<label style="display:block; margin-bottom:4px;">';
+            echo '<input type="checkbox" name="damncute_breed_species[]" value="' . esc_attr((string) $species->term_id) . '" ' . $checked . ' /> ';
+            echo esc_html($species->name);
+            echo '</label>';
+        }
+        echo '</div>';
+        echo '</div>';
+    }
+}
+
+if (!function_exists('damncute_breed_species_add_field')) {
+    function damncute_breed_species_add_field(): void
+    {
+        damncute_breed_species_field(null);
+    }
+}
+add_action('breed_add_form_fields', 'damncute_breed_species_add_field');
+
+if (!function_exists('damncute_breed_species_edit_field')) {
+    function damncute_breed_species_edit_field(WP_Term $term): void
+    {
+        echo '<tr class="form-field term-breed-species-wrap"><th scope="row">';
+        echo '<label>' . esc_html__('Applies to species', 'damncute') . '</label></th><td>';
+        damncute_breed_species_field($term);
+        echo '</td></tr>';
+    }
+}
+add_action('breed_edit_form_fields', 'damncute_breed_species_edit_field');
+
+if (!function_exists('damncute_save_breed_species_meta')) {
+    function damncute_save_breed_species_meta(int $term_id): void
+    {
+        if (!isset($_POST['damncute_breed_species_nonce']) || !wp_verify_nonce($_POST['damncute_breed_species_nonce'], 'damncute_breed_species')) {
+            return;
+        }
+
+        if (!current_user_can('manage_categories')) {
+            return;
+        }
+
+        $species_ids = isset($_POST['damncute_breed_species']) ? (array) $_POST['damncute_breed_species'] : [];
+        $species_ids = array_values(array_filter(array_map('absint', $species_ids)));
+
+        if (empty($species_ids)) {
+            delete_term_meta($term_id, '_damncute_breed_species');
+            return;
+        }
+
+        update_term_meta($term_id, '_damncute_breed_species', $species_ids);
+    }
+}
+add_action('created_breed', 'damncute_save_breed_species_meta');
+add_action('edited_breed', 'damncute_save_breed_species_meta');
+
+if (!function_exists('damncute_filter_breeds_by_species')) {
+    function damncute_filter_breeds_by_species(int $post_id, WP_Post $post): void
+    {
+        if ($post->post_type !== 'pets') {
+            return;
+        }
+
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (wp_is_post_revision($post_id)) {
+            return;
+        }
+
+        $species_ids = wp_get_post_terms($post_id, 'species', ['fields' => 'ids']);
+        if (empty($species_ids) || is_wp_error($species_ids)) {
+            return;
+        }
+
+        $breed_terms = wp_get_post_terms($post_id, 'breed', ['fields' => 'ids']);
+        if (empty($breed_terms) || is_wp_error($breed_terms)) {
+            return;
+        }
+
+        $allowed = [];
+        foreach ($breed_terms as $breed_id) {
+            $allowed_species = get_term_meta((int) $breed_id, '_damncute_breed_species', true);
+            $allowed_species = is_array($allowed_species) ? array_map('absint', $allowed_species) : [];
+
+            if (empty($allowed_species)) {
+                $allowed[] = (int) $breed_id;
+                continue;
+            }
+
+            if (array_intersect($species_ids, $allowed_species)) {
+                $allowed[] = (int) $breed_id;
+            }
+        }
+
+        wp_set_object_terms($post_id, $allowed, 'breed', false);
+    }
+}
+add_action('save_post_pets', 'damncute_filter_breeds_by_species', 10, 2);
+
 if (!function_exists('damncute_register_meta')) {
     function damncute_register_meta(): void
     {
@@ -169,6 +321,7 @@ if (!function_exists('damncute_register_meta')) {
         $meta_fields = [
             'pet_name' => 'string',
             'breed' => 'string',
+            'breed_type' => 'string',
             'age' => 'string',
             'owner_social' => 'string',
             'adoption_status' => 'string',
@@ -695,6 +848,866 @@ if (!function_exists('damncute_register_settings')) {
 }
 add_action('admin_init', 'damncute_register_settings');
 
+if (!function_exists('damncute_term_import_taxonomies')) {
+    function damncute_term_import_taxonomies(): array
+    {
+        return ['species', 'breed', 'vibe'];
+    }
+}
+
+if (!function_exists('damncute_register_breed_manager_page')) {
+    function damncute_register_breed_manager_page(): void
+    {
+        add_submenu_page(
+            'edit.php?post_type=pets',
+            __('Breed Manager', 'damncute'),
+            __('Breed Manager', 'damncute'),
+            'manage_categories',
+            'damncute-breed-manager',
+            'damncute_render_breed_manager_page'
+        );
+    }
+}
+add_action('admin_menu', 'damncute_register_breed_manager_page');
+
+if (!function_exists('damncute_render_breed_manager_page')) {
+    function damncute_render_breed_manager_page(): void
+    {
+        $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'manual';
+        if (!in_array($tab, ['manual', 'import'], true)) {
+            $tab = 'manual';
+        }
+
+        $species_terms = get_terms(['taxonomy' => 'species', 'hide_empty' => false]);
+        if (is_wp_error($species_terms)) {
+            $species_terms = [];
+        }
+
+        $base_url = admin_url('edit.php?post_type=pets&page=damncute-breed-manager');
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Breed Manager', 'damncute') . '</h1>';
+        echo '<nav class="nav-tab-wrapper">';
+        echo '<a class="nav-tab ' . ($tab === 'manual' ? 'nav-tab-active' : '') . '" href="' . esc_url(add_query_arg('tab', 'manual', $base_url)) . '">' . esc_html__('Manual', 'damncute') . '</a>';
+        echo '<a class="nav-tab ' . ($tab === 'import' ? 'nav-tab-active' : '') . '" href="' . esc_url(add_query_arg('tab', 'import', $base_url)) . '">' . esc_html__('Import', 'damncute') . '</a>';
+        echo '</nav>';
+
+        if (isset($_GET['dc_breed_added'])) {
+            $status = sanitize_key((string) $_GET['dc_breed_added']);
+            if ($status === '1') {
+                echo '<div class="notice notice-success"><p>' . esc_html__('Breed added.', 'damncute') . '</p></div>';
+            } elseif ($status === 'exists') {
+                echo '<div class="notice notice-warning"><p>' . esc_html__('Breed already exists.', 'damncute') . '</p></div>';
+            } else {
+                echo '<div class="notice notice-error"><p>' . esc_html__('Could not add breed.', 'damncute') . '</p></div>';
+            }
+        }
+
+        if (isset($_GET['dc_breeds_deleted'])) {
+            $deleted = sanitize_key((string) $_GET['dc_breeds_deleted']);
+            if ($deleted === '1') {
+                echo '<div class="notice notice-success"><p>' . esc_html__('All breeds deleted.', 'damncute') . '</p></div>';
+            } else {
+                echo '<div class="notice notice-warning"><p>' . esc_html__('Delete cancelled. Confirmation text did not match.', 'damncute') . '</p></div>';
+            }
+        }
+
+        if (isset($_GET['dc_import']) && isset($_GET['dc_imported'])) {
+            $imported = isset($_GET['dc_imported']) ? absint($_GET['dc_imported']) : 0;
+            $skipped = isset($_GET['dc_skipped']) ? absint($_GET['dc_skipped']) : 0;
+            $failed = isset($_GET['dc_failed']) ? absint($_GET['dc_failed']) : 0;
+            $message = sprintf(
+                /* translators: 1: imported count, 2: skipped count, 3: failed count */
+                esc_html__('Import complete: %1$d added, %2$d skipped, %3$d failed.', 'damncute'),
+                $imported,
+                $skipped,
+                $failed
+            );
+            $class = $failed > 0 ? 'notice notice-warning' : 'notice notice-success';
+            echo '<div class="' . esc_attr($class) . '"><p>' . $message . '</p></div>';
+        }
+
+        if ($tab === 'manual') {
+            echo '<p>' . esc_html__('Add a single breed and map it to one or more species.', 'damncute') . '</p>';
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+            wp_nonce_field('damncute_add_breed', 'damncute_add_breed_nonce');
+            echo '<input type="hidden" name="action" value="damncute_add_breed_term" />';
+            echo '<table class="form-table" role="presentation"><tbody>';
+            echo '<tr><th scope="row"><label for="damncute_breed_name">' . esc_html__('Breed name', 'damncute') . '</label></th><td>';
+            echo '<input id="damncute_breed_name" name="damncute_breed_name" type="text" class="regular-text" required />';
+            echo '</td></tr>';
+
+            echo '<tr><th scope="row"><label for="damncute_breed_type_manual">' . esc_html__('Breed type', 'damncute') . '</label></th><td>';
+            echo '<select id="damncute_breed_type_manual" name="damncute_breed_type_manual" style="max-width:320px; width:100%;">';
+            foreach (damncute_breed_type_labels() as $key => $label) {
+                echo '<option value="' . esc_attr($key) . '">' . esc_html($label) . '</option>';
+            }
+            echo '</select>';
+            echo '<p class="description">' . esc_html__('Optional; for dogs/cats that have a specific type.', 'damncute') . '</p>';
+            echo '</td></tr>';
+
+            echo '<tr><th scope="row"><label for="damncute_breed_species_manual">' . esc_html__('Species', 'damncute') . '</label></th><td>';
+            if (!empty($species_terms)) {
+                echo '<select id="damncute_breed_species_manual" name="damncute_breed_species_manual[]" multiple size="6" style="max-width:360px; width:100%;">';
+                foreach ($species_terms as $species) {
+                    echo '<option value="' . esc_attr((string) $species->term_id) . '">' . esc_html($species->name) . '</option>';
+                }
+                echo '</select>';
+                echo '<p class="description">' . esc_html__('Select one or more species for this breed.', 'damncute') . '</p>';
+            } else {
+                echo '<p>' . esc_html__('Create species terms first to enable mapping.', 'damncute') . '</p>';
+            }
+            echo '</td></tr>';
+            echo '</tbody></table>';
+            submit_button(__('Add Breed', 'damncute'));
+            echo '</form>';
+            damncute_render_breed_list();
+        } else {
+            echo '<p>' . esc_html__('Pick a species, choose a CSV or JSON file, and import. Duplicates are skipped.', 'damncute') . '</p>';
+            echo '<form method="post" enctype="multipart/form-data" action="' . esc_url(admin_url('admin-post.php')) . '">';
+            wp_nonce_field('damncute_import_terms', 'damncute_import_terms_nonce');
+            echo '<input type="hidden" name="action" value="damncute_import_terms" />';
+            echo '<input type="hidden" name="taxonomy" value="breed" />';
+            echo '<table class="form-table" role="presentation"><tbody>';
+            echo '<tr><th scope="row"><label for="damncute_breed_type_import">' . esc_html__('Breed type', 'damncute') . '</label></th><td>';
+            echo '<select id="damncute_breed_type_import" name="damncute_breed_type_import" style="max-width:320px; width:100%;">';
+            foreach (damncute_breed_type_labels() as $key => $label) {
+                echo '<option value="' . esc_attr($key) . '">' . esc_html($label) . '</option>';
+            }
+            echo '</select>';
+            echo '<p class="description">' . esc_html__('Optional; applies to all imported breeds.', 'damncute') . '</p>';
+            echo '</td></tr>';
+
+            echo '<tr><th scope="row"><label for="damncute_breed_species_import">' . esc_html__('Species', 'damncute') . '</label></th><td>';
+            if (!empty($species_terms)) {
+                echo '<select id="damncute_breed_species_import" name="damncute_breed_species_import[]" multiple size="6" style="max-width:360px; width:100%;">';
+                foreach ($species_terms as $species) {
+                    echo '<option value="' . esc_attr((string) $species->term_id) . '">' . esc_html($species->name) . '</option>';
+                }
+                echo '</select>';
+                echo '<p class="description">' . esc_html__('Select one or more species for these breeds.', 'damncute') . '</p>';
+            } else {
+                echo '<p>' . esc_html__('Create species terms first to enable mapping.', 'damncute') . '</p>';
+            }
+            echo '</td></tr>';
+            echo '<tr><th scope="row"><label for="damncute_import_file">' . esc_html__('File', 'damncute') . '</label></th><td>';
+            echo '<input id="damncute_import_file" type="file" name="damncute_import_file" accept=".csv,.json" required />';
+            echo '<p class="description">' . esc_html__('CSV: one term per line, or a column named "name". JSON: array of strings or objects with "name".', 'damncute') . '</p>';
+            echo '</td></tr>';
+            echo '</tbody></table>';
+            submit_button(__('Import', 'damncute'));
+            echo '</form>';
+            damncute_render_breed_list();
+        }
+
+        echo '<hr style="margin:32px 0;">';
+        echo '<h2 style="color:#b32d2e;">' . esc_html__('Danger Zone', 'damncute') . '</h2>';
+        echo '<p>' . esc_html__('This permanently deletes all breed terms and removes them from pets.', 'damncute') . '</p>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        wp_nonce_field('damncute_delete_all_breeds', 'damncute_delete_all_breeds_nonce');
+        echo '<input type="hidden" name="action" value="damncute_delete_all_breeds" />';
+        echo '<p><label for="damncute_delete_breeds_confirm"><strong>' . esc_html__('Type DELETE ALL to confirm', 'damncute') . '</strong></label></p>';
+        echo '<input id="damncute_delete_breeds_confirm" name="damncute_delete_breeds_confirm" type="text" class="regular-text" />';
+        echo '<p>';
+        echo '<button type="submit" class="button" style="background:#b32d2e; border-color:#b32d2e; color:#fff;">' . esc_html__('Delete All Breeds', 'damncute') . '</button>';
+        echo '</p>';
+        echo '</form>';
+
+        echo '</div>';
+    }
+}
+
+if (!function_exists('damncute_render_breed_list')) {
+    function damncute_render_breed_list(): void
+    {
+        $breeds = get_terms([
+            'taxonomy' => 'breed',
+            'hide_empty' => false,
+        ]);
+
+        if (is_wp_error($breeds) || empty($breeds)) {
+            echo '<h2>' . esc_html__('Current breeds', 'damncute') . '</h2>';
+            echo '<p>' . esc_html__('No breeds yet.', 'damncute') . '</p>';
+            return;
+        }
+
+        $species_lookup = [];
+        $species_slug_lookup = [];
+        $species_terms = get_terms(['taxonomy' => 'species', 'hide_empty' => false]);
+        if (is_wp_error($species_terms)) {
+            $species_terms = [];
+        }
+        foreach ($species_terms as $species) {
+            $species_lookup[(int) $species->term_id] = $species->name;
+            $species_slug_lookup[(int) $species->term_id] = $species->slug;
+        }
+
+        echo '<h2 style="margin-top:32px;">' . esc_html__('Current breeds', 'damncute') . '</h2>';
+        echo '<div class="damncute-breed-filters">';
+        echo '<input type="search" data-breed-filter="search" placeholder="' . esc_attr__('Search breeds...', 'damncute') . '" />';
+        echo '<select data-breed-filter="species">';
+        echo '<option value="">' . esc_html__('All species', 'damncute') . '</option>';
+        foreach ($species_terms as $species) {
+            echo '<option value="' . esc_attr($species->slug) . '">' . esc_html($species->name) . '</option>';
+        }
+        echo '</select>';
+        echo '<select data-breed-filter="type">';
+        echo '<option value="">' . esc_html__('All types', 'damncute') . '</option>';
+        foreach (damncute_breed_type_labels() as $key => $label) {
+            if ($key === '') {
+                continue;
+            }
+            echo '<option value="' . esc_attr($key) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select>';
+        echo '</div>';
+
+        echo '<table id="damncute-breed-table" class="widefat striped" style="max-width:860px;">';
+        echo '<thead><tr><th data-breed-sort="breed">' . esc_html__('Breed', 'damncute') . '</th><th data-breed-sort="type">' . esc_html__('Breed type', 'damncute') . '</th><th data-breed-sort="species">' . esc_html__('Species', 'damncute') . '</th></tr></thead>';
+        echo '<tbody>';
+        foreach ($breeds as $breed) {
+            $mapped = get_term_meta($breed->term_id, '_damncute_breed_species', true);
+            $mapped = is_array($mapped) ? array_map('absint', $mapped) : [];
+            $labels = [];
+            $species_slugs = [];
+            foreach ($mapped as $species_id) {
+                if (isset($species_lookup[$species_id])) {
+                    $labels[] = $species_lookup[$species_id];
+                    $species_slugs[] = $species_slug_lookup[$species_id] ?? '';
+                }
+            }
+
+            $species_label = !empty($labels) ? implode(', ', array_map('esc_html', $labels)) : esc_html__('All/Unmapped', 'damncute');
+            $breed_type = (string) get_term_meta($breed->term_id, '_damncute_breed_type', true);
+            $breed_type_label = damncute_breed_type_labels()[$breed_type] ?? esc_html__('Unmapped', 'damncute');
+            $species_slug_list = !empty($species_slugs) ? implode(',', array_filter($species_slugs)) : '';
+            echo '<tr data-breed="' . esc_attr($breed->name) . '" data-type="' . esc_attr($breed_type) . '" data-species="' . esc_attr($species_slug_list) . '">';
+            echo '<td>' . esc_html($breed->name) . '</td>';
+            echo '<td>' . esc_html($breed_type_label) . '</td>';
+            echo '<td>' . $species_label . '</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
+}
+
+if (!function_exists('damncute_breed_type_labels')) {
+    function damncute_breed_type_labels(): array
+    {
+        return [
+            '' => __('— None —', 'damncute'),
+            'akc' => __('AKC Registered', 'damncute'),
+            'designer' => __('Designer', 'damncute'),
+            'just-cute' => __('Just Cute', 'damncute'),
+            'purebred' => __('Purebred', 'damncute'),
+            'mixed' => __('Mixed', 'damncute'),
+        ];
+    }
+}
+
+if (!function_exists('damncute_parse_term_names_from_json')) {
+    function damncute_parse_term_names_from_json(array $data): array
+    {
+        $items = $data;
+        if (isset($data['terms']) && is_array($data['terms'])) {
+            $items = $data['terms'];
+        }
+        if (isset($data['items']) && is_array($data['items'])) {
+            $items = $data['items'];
+        }
+
+        $names = [];
+        foreach ($items as $item) {
+            if (is_string($item)) {
+                $names[] = $item;
+                continue;
+            }
+            if (is_array($item)) {
+                if (isset($item['name']) && is_string($item['name'])) {
+                    $names[] = $item['name'];
+                } elseif (isset($item['term']) && is_string($item['term'])) {
+                    $names[] = $item['term'];
+                } elseif (isset($item['label']) && is_string($item['label'])) {
+                    $names[] = $item['label'];
+                }
+            }
+        }
+
+        return $names;
+    }
+}
+
+if (!function_exists('damncute_parse_term_names_from_csv')) {
+    function damncute_parse_term_names_from_csv(string $content): array
+    {
+        $handle = fopen('php://temp', 'r+');
+        if (!$handle) {
+            return [];
+        }
+
+        fwrite($handle, $content);
+        rewind($handle);
+
+        $first_line = fgets($handle);
+        if ($first_line === false) {
+            fclose($handle);
+            return [];
+        }
+
+        $comma_count = substr_count($first_line, ',');
+        $semicolon_count = substr_count($first_line, ';');
+        $delimiter = $semicolon_count > $comma_count ? ';' : ',';
+
+        rewind($handle);
+
+        $header = fgetcsv($handle, 0, $delimiter);
+        if (!$header) {
+            fclose($handle);
+            return [];
+        }
+
+        $header_lower = array_map('strtolower', $header);
+        $name_index = array_search('name', $header_lower, true);
+        if ($name_index === false) {
+            $name_index = array_search('term', $header_lower, true);
+        }
+        if ($name_index === false) {
+            $name_index = array_search('label', $header_lower, true);
+        }
+        $type_index = array_search('type', $header_lower, true);
+
+        $rows = [];
+        if ($name_index === false) {
+            $name_index = 0;
+            $rows[] = [
+                'name' => $header[$name_index] ?? '',
+                'type' => $header[$type_index] ?? ($header[1] ?? ''),
+            ];
+        }
+
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $rows[] = [
+                'name' => $row[$name_index] ?? '',
+                'type' => $type_index !== false ? ($row[$type_index] ?? '') : ($row[1] ?? ''),
+            ];
+        }
+
+        fclose($handle);
+        return $rows;
+    }
+}
+
+if (!function_exists('damncute_handle_term_import')) {
+    function damncute_handle_term_import(): void
+    {
+        if (!isset($_POST['damncute_import_terms_nonce']) || !wp_verify_nonce($_POST['damncute_import_terms_nonce'], 'damncute_import_terms')) {
+            wp_die(esc_html__('Invalid nonce.', 'damncute'));
+        }
+
+        $taxonomy = isset($_POST['taxonomy']) ? sanitize_key($_POST['taxonomy']) : '';
+        if (!in_array($taxonomy, damncute_term_import_taxonomies(), true)) {
+            wp_die(esc_html__('Invalid taxonomy.', 'damncute'));
+        }
+
+        $tax = get_taxonomy($taxonomy);
+        $cap = $tax && isset($tax->cap->manage_terms) ? $tax->cap->manage_terms : 'manage_categories';
+        if (!current_user_can($cap)) {
+            wp_die(esc_html__('Permission denied.', 'damncute'));
+        }
+
+        if (!isset($_FILES['damncute_import_file']) || !is_uploaded_file($_FILES['damncute_import_file']['tmp_name'])) {
+            wp_die(esc_html__('No file uploaded.', 'damncute'));
+        }
+
+        $content = file_get_contents($_FILES['damncute_import_file']['tmp_name']);
+        if ($content === false) {
+            wp_die(esc_html__('Could not read file.', 'damncute'));
+        }
+
+        $trimmed = ltrim($content);
+        $names = [];
+        if ($trimmed !== '' && ($trimmed[0] === '{' || $trimmed[0] === '[')) {
+            $data = json_decode($content, true);
+            if (!is_array($data)) {
+                wp_die(esc_html__('Invalid JSON.', 'damncute'));
+            }
+            $names = damncute_parse_term_names_from_json($data);
+        } else {
+            $names = damncute_parse_term_names_from_csv($content);
+        }
+
+        $species_ids = [];
+        if ($taxonomy === 'breed' && isset($_POST['damncute_breed_species_import'])) {
+            $species_ids = array_values(array_filter(array_map('absint', (array) $_POST['damncute_breed_species_import'])));
+        }
+        $breed_type = '';
+        if ($taxonomy === 'breed' && isset($_POST['damncute_breed_type_import'])) {
+            $breed_type = sanitize_key((string) $_POST['damncute_breed_type_import']);
+        }
+        $breed_type_labels = damncute_breed_type_labels();
+        if (!isset($breed_type_labels[$breed_type])) {
+            $breed_type = '';
+        }
+
+        $imported = 0;
+        $skipped = 0;
+        $failed = 0;
+
+        foreach ($names as $row) {
+            $name = '';
+            $row_type = '';
+            if (is_array($row)) {
+                $name = sanitize_text_field((string) ($row['name'] ?? ''));
+                $row_type = sanitize_text_field((string) ($row['type'] ?? ''));
+            } else {
+                $name = sanitize_text_field((string) $row);
+            }
+
+            if ($name === '') {
+                continue;
+            }
+
+            if (term_exists($name, $taxonomy)) {
+                $skipped++;
+                continue;
+            }
+
+            $result = wp_insert_term($name, $taxonomy);
+            if (is_wp_error($result)) {
+                $failed++;
+                continue;
+            }
+
+            if ($taxonomy === 'breed') {
+                if (!empty($species_ids)) {
+                    update_term_meta((int) $result['term_id'], '_damncute_breed_species', $species_ids);
+                }
+                $final_type = '';
+                if ($row_type !== '') {
+                    $row_key = sanitize_key($row_type);
+                    if (isset($breed_type_labels[$row_key])) {
+                        $final_type = $row_key;
+                    } else {
+                        foreach ($breed_type_labels as $key => $label) {
+                            if (strtolower((string) $label) === strtolower($row_type)) {
+                                $final_type = $key;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if ($final_type === '' && $breed_type !== '') {
+                    $final_type = $breed_type;
+                }
+                if ($final_type !== '') {
+                    update_term_meta((int) $result['term_id'], '_damncute_breed_type', $final_type);
+                }
+            }
+
+            $imported++;
+        }
+
+        $redirect = wp_get_referer();
+        if (!$redirect) {
+            $redirect = admin_url('edit-tags.php?taxonomy=' . $taxonomy);
+        }
+
+        $redirect = add_query_arg([
+            'dc_import' => 1,
+            'dc_imported' => $imported,
+            'dc_skipped' => $skipped,
+            'dc_failed' => $failed,
+        ], $redirect);
+
+        wp_safe_redirect($redirect);
+        exit;
+    }
+}
+add_action('admin_post_damncute_import_terms', 'damncute_handle_term_import');
+
+if (!function_exists('damncute_handle_add_breed_term')) {
+    function damncute_handle_add_breed_term(): void
+    {
+        if (!isset($_POST['damncute_add_breed_nonce']) || !wp_verify_nonce($_POST['damncute_add_breed_nonce'], 'damncute_add_breed')) {
+            wp_die(esc_html__('Invalid nonce.', 'damncute'));
+        }
+
+        if (!current_user_can('manage_categories')) {
+            wp_die(esc_html__('Permission denied.', 'damncute'));
+        }
+
+        $name = isset($_POST['damncute_breed_name']) ? sanitize_text_field($_POST['damncute_breed_name']) : '';
+        if ($name === '') {
+            wp_safe_redirect(add_query_arg('dc_breed_added', '0', admin_url('edit.php?post_type=pets&page=damncute-breed-manager')));
+            exit;
+        }
+
+        if (term_exists($name, 'breed')) {
+            wp_safe_redirect(add_query_arg('dc_breed_added', 'exists', admin_url('edit.php?post_type=pets&page=damncute-breed-manager')));
+            exit;
+        }
+
+        $result = wp_insert_term($name, 'breed');
+        if (is_wp_error($result)) {
+            wp_safe_redirect(add_query_arg('dc_breed_added', '0', admin_url('edit.php?post_type=pets&page=damncute-breed-manager')));
+            exit;
+        }
+
+        $breed_type = isset($_POST['damncute_breed_type_manual']) ? sanitize_key((string) $_POST['damncute_breed_type_manual']) : '';
+        $breed_type_labels = damncute_breed_type_labels();
+        if (!isset($breed_type_labels[$breed_type])) {
+            $breed_type = '';
+        }
+
+        $species_ids = isset($_POST['damncute_breed_species_manual']) ? (array) $_POST['damncute_breed_species_manual'] : [];
+        $species_ids = array_values(array_filter(array_map('absint', $species_ids)));
+        if (!empty($species_ids)) {
+            update_term_meta((int) $result['term_id'], '_damncute_breed_species', $species_ids);
+        }
+        if ($breed_type !== '') {
+            update_term_meta((int) $result['term_id'], '_damncute_breed_type', $breed_type);
+        }
+
+        wp_safe_redirect(add_query_arg('dc_breed_added', '1', admin_url('edit.php?post_type=pets&page=damncute-breed-manager')));
+        exit;
+    }
+}
+add_action('admin_post_damncute_add_breed_term', 'damncute_handle_add_breed_term');
+
+if (!function_exists('damncute_handle_delete_all_breeds')) {
+    function damncute_handle_delete_all_breeds(): void
+    {
+        if (!isset($_POST['damncute_delete_all_breeds_nonce']) || !wp_verify_nonce($_POST['damncute_delete_all_breeds_nonce'], 'damncute_delete_all_breeds')) {
+            wp_die(esc_html__('Invalid nonce.', 'damncute'));
+        }
+
+        if (!current_user_can('manage_categories')) {
+            wp_die(esc_html__('Permission denied.', 'damncute'));
+        }
+
+        $confirm = isset($_POST['damncute_delete_breeds_confirm']) ? trim((string) $_POST['damncute_delete_breeds_confirm']) : '';
+        if ($confirm !== 'DELETE ALL') {
+            wp_safe_redirect(add_query_arg('dc_breeds_deleted', '0', admin_url('edit.php?post_type=pets&page=damncute-breed-manager')));
+            exit;
+        }
+
+        $breeds = get_terms([
+            'taxonomy' => 'breed',
+            'hide_empty' => false,
+            'fields' => 'ids',
+        ]);
+
+        if (!is_wp_error($breeds)) {
+            foreach ($breeds as $term_id) {
+                wp_delete_term((int) $term_id, 'breed');
+            }
+        }
+
+        wp_safe_redirect(add_query_arg('dc_breeds_deleted', '1', admin_url('edit.php?post_type=pets&page=damncute-breed-manager')));
+        exit;
+    }
+}
+add_action('admin_post_damncute_delete_all_breeds', 'damncute_handle_delete_all_breeds');
+
+if (!function_exists('damncute_term_import_notice')) {
+    function damncute_term_import_notice(): void
+    {
+        if (!isset($_GET['dc_import']) || !isset($_GET['dc_imported'])) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if (!$screen || !in_array($screen->taxonomy ?? '', damncute_term_import_taxonomies(), true)) {
+            return;
+        }
+
+        $imported = isset($_GET['dc_imported']) ? absint($_GET['dc_imported']) : 0;
+        $skipped = isset($_GET['dc_skipped']) ? absint($_GET['dc_skipped']) : 0;
+        $failed = isset($_GET['dc_failed']) ? absint($_GET['dc_failed']) : 0;
+
+        $message = sprintf(
+            /* translators: 1: imported count, 2: skipped count, 3: failed count */
+            esc_html__('Import complete: %1$d added, %2$d skipped, %3$d failed.', 'damncute'),
+            $imported,
+            $skipped,
+            $failed
+        );
+
+        $class = $failed > 0 ? 'notice notice-warning' : 'notice notice-success';
+        echo '<div class="' . esc_attr($class) . '"><p>' . $message . '</p></div>';
+    }
+}
+add_action('admin_notices', 'damncute_term_import_notice');
+
+if (!function_exists('damncute_pet_of_day_metabox')) {
+    function damncute_pet_of_day_metabox(): void
+    {
+        add_meta_box(
+            'damncute-pet-of-day',
+            __('Pet of the Day', 'damncute'),
+            'damncute_pet_of_day_metabox_render',
+            'pets',
+            'side',
+            'high'
+        );
+    }
+}
+add_action('add_meta_boxes', 'damncute_pet_of_day_metabox');
+
+if (!function_exists('damncute_breed_type_metabox')) {
+    function damncute_breed_type_metabox(): void
+    {
+        add_meta_box(
+            'damncute-breed-type',
+            __('Breed Type', 'damncute'),
+            'damncute_breed_type_metabox_render',
+            'pets',
+            'side',
+            'default'
+        );
+    }
+}
+add_action('add_meta_boxes', 'damncute_breed_type_metabox');
+
+if (!function_exists('damncute_breed_type_options')) {
+    function damncute_breed_type_options(array $species_slugs): array
+    {
+        $options = ['' => __('— Select —', 'damncute')];
+
+        if (in_array('dog', $species_slugs, true)) {
+            $options['akc'] = __('AKC Registered', 'damncute');
+            $options['designer'] = __('Designer', 'damncute');
+            $options['just-cute'] = __('Just Cute', 'damncute');
+        }
+
+        if (in_array('cat', $species_slugs, true)) {
+            $options['purebred'] = __('Purebred', 'damncute');
+            $options['mixed'] = __('Mixed', 'damncute');
+            $options['just-cute'] = __('Just Cute', 'damncute');
+        }
+
+        return $options;
+    }
+}
+
+if (!function_exists('damncute_normalize_breed_type')) {
+    function damncute_normalize_breed_type(string $value): string
+    {
+        $value = sanitize_key($value);
+        $map = [
+            'akc-registered' => 'akc',
+            'akc' => 'akc',
+            'designer' => 'designer',
+            'purebred' => 'purebred',
+            'mixed' => 'mixed',
+            'just-cute' => 'just-cute',
+        ];
+
+        return $map[$value] ?? '';
+    }
+}
+
+if (!function_exists('damncute_breed_type_metabox_render')) {
+    function damncute_breed_type_metabox_render(WP_Post $post): void
+    {
+        wp_nonce_field('damncute_breed_type_save', 'damncute_breed_type_nonce');
+        $raw_value = (string) get_post_meta($post->ID, 'breed_type', true);
+        $value = damncute_normalize_breed_type($raw_value);
+
+        $species_slugs = wp_get_post_terms($post->ID, 'species', ['fields' => 'slugs']);
+        if (is_wp_error($species_slugs)) {
+            $species_slugs = [];
+        }
+
+        $options = damncute_breed_type_options($species_slugs);
+        $has_choices = count($options) > 1;
+
+        echo '<p>' . esc_html__('Only applies when Species includes Dog or Cat.', 'damncute') . '</p>';
+        echo '<select name="damncute_breed_type" style="width:100%;"' . ($has_choices ? '' : ' disabled') . '>';
+        foreach ($options as $key => $label) {
+            $selected = selected($value, $key, false);
+            echo '<option value="' . esc_attr($key) . '"' . $selected . '>' . esc_html($label) . '</option>';
+        }
+        echo '</select>';
+        if (!$has_choices) {
+            echo '<p class="description">' . esc_html__('Select Dog or Cat in Species to enable options.', 'damncute') . '</p>';
+        }
+    }
+}
+
+if (!function_exists('damncute_save_breed_type')) {
+    function damncute_save_breed_type(int $post_id, WP_Post $post): void
+    {
+        if ($post->post_type !== 'pets') {
+            return;
+        }
+
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (!isset($_POST['damncute_breed_type_nonce']) || !wp_verify_nonce($_POST['damncute_breed_type_nonce'], 'damncute_breed_type_save')) {
+            return;
+        }
+
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        $species_slugs = wp_get_post_terms($post_id, 'species', ['fields' => 'slugs']);
+        if (is_wp_error($species_slugs) || empty($species_slugs)) {
+            delete_post_meta($post_id, 'breed_type');
+            return;
+        }
+
+        $allowed = array_keys(damncute_breed_type_options($species_slugs));
+        $value = isset($_POST['damncute_breed_type']) ? damncute_normalize_breed_type((string) $_POST['damncute_breed_type']) : '';
+        if ($value === '' || !in_array($value, $allowed, true)) {
+            delete_post_meta($post_id, 'breed_type');
+            return;
+        }
+
+        update_post_meta($post_id, 'breed_type', $value);
+    }
+}
+add_action('save_post_pets', 'damncute_save_breed_type', 20, 2);
+
+if (!function_exists('damncute_pet_of_day_metabox_render')) {
+    function damncute_pet_of_day_metabox_render(WP_Post $post): void
+    {
+        wp_nonce_field('damncute_pet_of_day_save', 'damncute_pet_of_day_nonce');
+        $scheduled = (string) get_post_meta($post->ID, '_damncute_pet_of_day_at', true);
+        $selected_id = absint(get_option('damncute_pet_of_day_id', 0));
+        $is_selected = $selected_id === (int) $post->ID;
+
+        if ($scheduled !== '') {
+            $tz = wp_timezone();
+            try {
+                $dt = new DateTimeImmutable('@' . (int) $scheduled);
+                $scheduled = $dt->setTimezone($tz)->format('Y-m-d\TH:i');
+            } catch (Exception $e) {
+                $scheduled = '';
+            }
+        }
+
+        $feature_url = wp_nonce_url(
+            admin_url('admin-post.php?action=damncute_feature_pet_of_day&post_id=' . (int) $post->ID),
+            'damncute_feature_pet_of_day'
+        );
+
+        echo '<p>' . esc_html__('Feature this pet now or schedule it for later.', 'damncute') . '</p>';
+
+        if ($is_selected) {
+            echo '<p><strong>' . esc_html__('Currently featured.', 'damncute') . '</strong></p>';
+        }
+
+        echo '<p><a class="button button-primary" href="' . esc_url($feature_url) . '">' . esc_html__('Feature Now', 'damncute') . '</a></p>';
+
+        echo '<label for="damncute_pet_of_day_at"><strong>' . esc_html__('Schedule time', 'damncute') . '</strong></label>';
+        echo '<p><input type="datetime-local" id="damncute_pet_of_day_at" name="damncute_pet_of_day_at" value="' . esc_attr($scheduled) . '" /></p>';
+        echo '<p class="description">' . esc_html__('Leave empty to clear the schedule.', 'damncute') . '</p>';
+    }
+}
+
+if (!function_exists('damncute_pet_of_day_row_action')) {
+    function damncute_pet_of_day_row_action(array $actions, WP_Post $post): array
+    {
+        if ($post->post_type !== 'pets' || !current_user_can('edit_post', $post->ID)) {
+            return $actions;
+        }
+
+        $url = wp_nonce_url(
+            admin_url('admin-post.php?action=damncute_feature_pet_of_day&post_id=' . (int) $post->ID),
+            'damncute_feature_pet_of_day'
+        );
+
+        $actions['damncute_feature_pet'] = '<a href="' . esc_url($url) . '">' . esc_html__('Feature Today', 'damncute') . '</a>';
+        return $actions;
+    }
+}
+add_filter('post_row_actions', 'damncute_pet_of_day_row_action', 10, 2);
+
+if (!function_exists('damncute_handle_feature_pet_of_day')) {
+    function damncute_handle_feature_pet_of_day(): void
+    {
+        if (!current_user_can('edit_posts')) {
+            wp_die(esc_html__('Permission denied.', 'damncute'));
+        }
+
+        check_admin_referer('damncute_feature_pet_of_day');
+
+        $post_id = isset($_GET['post_id']) ? absint($_GET['post_id']) : 0;
+        if (!$post_id || get_post_type($post_id) !== 'pets') {
+            wp_die(esc_html__('Invalid pet.', 'damncute'));
+        }
+
+        damncute_set_pet_of_day($post_id);
+        delete_post_meta($post_id, '_damncute_pet_of_day_at');
+        wp_clear_scheduled_hook('damncute_pet_of_day_schedule', [$post_id]);
+
+        wp_safe_redirect(wp_get_referer() ?: admin_url('edit.php?post_type=pets'));
+        exit;
+    }
+}
+add_action('admin_post_damncute_feature_pet_of_day', 'damncute_handle_feature_pet_of_day');
+
+if (!function_exists('damncute_save_pet_of_day_schedule')) {
+    function damncute_save_pet_of_day_schedule(int $post_id, WP_Post $post): void
+    {
+        if ($post->post_type !== 'pets' || !current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (!isset($_POST['damncute_pet_of_day_nonce']) || !wp_verify_nonce($_POST['damncute_pet_of_day_nonce'], 'damncute_pet_of_day_save')) {
+            return;
+        }
+
+        $raw = isset($_POST['damncute_pet_of_day_at']) ? sanitize_text_field($_POST['damncute_pet_of_day_at']) : '';
+        if ($raw === '') {
+            delete_post_meta($post_id, '_damncute_pet_of_day_at');
+            wp_clear_scheduled_hook('damncute_pet_of_day_schedule', [$post_id]);
+            return;
+        }
+
+        $tz = wp_timezone();
+        $dt = DateTimeImmutable::createFromFormat('Y-m-d\\TH:i', $raw, $tz);
+        if (!$dt) {
+            return;
+        }
+
+        $timestamp = $dt->getTimestamp();
+        update_post_meta($post_id, '_damncute_pet_of_day_at', (string) $timestamp);
+
+        if ($timestamp <= time()) {
+            damncute_set_pet_of_day($post_id);
+            wp_clear_scheduled_hook('damncute_pet_of_day_schedule', [$post_id]);
+            return;
+        }
+
+        wp_clear_scheduled_hook('damncute_pet_of_day_schedule', [$post_id]);
+        wp_schedule_single_event($timestamp, 'damncute_pet_of_day_schedule', [$post_id]);
+    }
+}
+add_action('save_post_pets', 'damncute_save_pet_of_day_schedule', 10, 2);
+
+if (!function_exists('damncute_set_pet_of_day')) {
+    function damncute_set_pet_of_day(int $post_id): void
+    {
+        if (get_post_status($post_id) !== 'publish') {
+            return;
+        }
+
+        update_option('damncute_pet_of_day_id', $post_id);
+        set_transient('damncute_pet_of_day_v2', $post_id, HOUR_IN_SECONDS * 12);
+    }
+}
+
+add_action('damncute_pet_of_day_schedule', 'damncute_set_pet_of_day');
+
 if (!function_exists('damncute_forminator_id_field')) {
     function damncute_forminator_id_field(): void
     {
@@ -745,6 +1758,105 @@ if (!function_exists('damncute_init_submission_handler')) {
     }
 }
 add_action('forminator_custom_form_submit_before_set_fields', 'damncute_init_submission_handler', 10, 3);
+
+if (!function_exists('damncute_get_breed_options_for_forminator')) {
+    function damncute_get_breed_options_for_forminator(string $breed_type, string $species_slug): array
+    {
+        static $breeds_cache = null;
+        static $species_ids = [];
+
+        if ($breeds_cache === null) {
+            $breeds_cache = get_terms([
+                'taxonomy' => 'breed',
+                'hide_empty' => false,
+                'orderby' => 'name',
+                'order' => 'ASC',
+            ]);
+        }
+
+        if (is_wp_error($breeds_cache) || empty($breeds_cache)) {
+            return [];
+        }
+
+        if ($species_slug !== '' && !array_key_exists($species_slug, $species_ids)) {
+            $term = get_term_by('slug', $species_slug, 'species');
+            $species_ids[$species_slug] = $term && !is_wp_error($term) ? (int) $term->term_id : 0;
+        }
+
+        $species_id = $species_ids[$species_slug] ?? 0;
+        $options = [];
+
+        foreach ($breeds_cache as $breed) {
+            $term_id = (int) $breed->term_id;
+            $type_raw = (string) get_term_meta($term_id, '_damncute_breed_type', true);
+            $type = function_exists('damncute_normalize_breed_type')
+                ? damncute_normalize_breed_type($type_raw)
+                : sanitize_key($type_raw);
+            if ($type !== $breed_type) {
+                continue;
+            }
+
+            if ($species_id) {
+                $allowed = (array) get_term_meta($term_id, '_damncute_breed_species', true);
+                $allowed_ids = array_map('intval', $allowed);
+                if (!empty($allowed_ids) && !in_array($species_id, $allowed_ids, true)) {
+                    continue;
+                }
+            }
+
+            $key = function_exists('forminator_unique_key') ? forminator_unique_key() : uniqid('dc_breed_', true);
+            $options[] = [
+                'label' => (string) $breed->name,
+                'value' => (string) $breed->slug,
+                'limit' => '',
+                'key' => $key,
+            ];
+        }
+
+        return $options;
+    }
+}
+
+if (!function_exists('damncute_populate_breed_forminator_fields')) {
+    function damncute_populate_breed_forminator_fields(array $wrappers, int $form_id): array
+    {
+        $target_form_id = (int) get_option('damncute_forminator_id', 39);
+        if ($form_id !== $target_form_id) {
+            return $wrappers;
+        }
+
+        $field_map = [
+            'select-6' => ['type' => 'akc', 'species' => 'dog'],
+            'select-7' => ['type' => 'designer', 'species' => 'dog'],
+            'select-8' => ['type' => 'purebred', 'species' => 'cat'],
+            'select-9' => ['type' => 'mixed', 'species' => 'cat'],
+        ];
+
+        foreach ($wrappers as $wrapper_index => $wrapper) {
+            if (empty($wrapper['fields']) || !is_array($wrapper['fields'])) {
+                continue;
+            }
+
+            foreach ($wrapper['fields'] as $field_index => $field) {
+                if (!is_array($field)) {
+                    continue;
+                }
+
+                $element_id = isset($field['element_id']) ? (string) $field['element_id'] : '';
+                if (!isset($field_map[$element_id])) {
+                    continue;
+                }
+
+                $map = $field_map[$element_id];
+                $options = damncute_get_breed_options_for_forminator($map['type'], $map['species']);
+                $wrappers[$wrapper_index]['fields'][$field_index]['options'] = $options;
+            }
+        }
+
+        return $wrappers;
+    }
+}
+add_filter('forminator_cform_render_fields', 'damncute_populate_breed_forminator_fields', 10, 2);
 
 if (!function_exists('damncute_register_proxy_route')) {
     function damncute_register_proxy_route(): void {
@@ -868,7 +1980,10 @@ if (!function_exists('damncute_pet_of_day_shortcode')) {
     function damncute_pet_of_day_shortcode(): string
     {
         $transient_key = 'damncute_pet_of_day_v2';
-        $post_id = get_transient($transient_key);
+        $selected_id = absint(get_option('damncute_pet_of_day_id', 0));
+        $post_id = $selected_id && get_post_status($selected_id) === 'publish'
+            ? $selected_id
+            : get_transient($transient_key);
 
         if (false === $post_id) {
             $query = new WP_Query([
@@ -1002,7 +2117,10 @@ if (!function_exists('damncute_pet_of_day_shortcode')) {
     function damncute_pet_of_day_shortcode(): string
     {
         $transient_key = 'damncute_pet_of_day_v2';
-        $post_id = get_transient($transient_key);
+        $selected_id = absint(get_option('damncute_pet_of_day_id', 0));
+        $post_id = $selected_id && get_post_status($selected_id) === 'publish'
+            ? $selected_id
+            : get_transient($transient_key);
 
         if (false === $post_id) {
             $query = new WP_Query([

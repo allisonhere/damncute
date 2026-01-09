@@ -22,6 +22,11 @@ class Pet_Submission_Handler {
             'species'          => 'select-1',
             'breed'            => 'select-2',
             'vibe'             => 'select-3',
+            'breed_type'       => 'select-5',
+            'breed_akc'        => 'select-6',
+            'breed_designer'   => 'select-7',
+            'breed_purebred'   => 'select-8',
+            'breed_mixed'      => 'select-9',
             'featured_image'   => 'upload-2', // New dedicated field
             'gallery'          => 'upload-1', // Existing multi-upload field
         ];
@@ -74,6 +79,39 @@ class Pet_Submission_Handler {
             'favorite_snack'   => sanitize_textarea_field($this->get_text_value($field_data_array, $map['favorite_snack'])),
         ];
 
+        $species_labels = $this->get_select_labels($field_data_array, $map['species']);
+        $species_slugs = array_map([$this, 'normalize_label'], $species_labels);
+        $species_slugs = array_values(array_filter($species_slugs));
+
+        $breed_field_id = $map['breed'];
+        if (!empty($species_slugs)) {
+            $allowed = $this->allowed_breed_types($species_slugs);
+            $breed_field_map = [
+                'akc' => $map['breed_akc'],
+                'designer' => $map['breed_designer'],
+                'purebred' => $map['breed_purebred'],
+                'mixed' => $map['breed_mixed'],
+            ];
+
+            $breed_type = '';
+            foreach ($breed_field_map as $type => $field_id) {
+                if (in_array($type, $allowed, true) && !empty($this->get_select_labels($field_data_array, $field_id))) {
+                    $breed_type = $type;
+                    $breed_field_id = $field_id;
+                    break;
+                }
+            }
+
+            if ($breed_type === '') {
+                $breed_type_labels = $this->get_select_labels($field_data_array, $map['breed_type']);
+                $breed_type = $this->normalize_breed_type($breed_type_labels[0] ?? '');
+            }
+
+            if ($breed_type !== '' && in_array($breed_type, $allowed, true)) {
+                $meta_data['breed_type'] = $breed_type;
+            }
+        }
+
         // Adoption Status (Single Select)
         $adoption_labels = $this->get_select_labels($field_data_array, $map['adoption_status']);
         $meta_data['adoption_status'] = $adoption_labels[0] ?? '';
@@ -86,7 +124,7 @@ class Pet_Submission_Handler {
 
         // Taxonomies
         $this->set_terms($post_id, 'species', $field_data_array, $map['species']);
-        $this->set_terms($post_id, 'breed', $field_data_array, $map['breed']);
+        $this->set_terms($post_id, 'breed', $field_data_array, $breed_field_id);
         $this->set_terms($post_id, 'vibe', $field_data_array, $map['vibe']);
 
         // Handle Uploads
@@ -154,6 +192,42 @@ class Pet_Submission_Handler {
         }
 
         return $labels;
+    }
+
+    private function allowed_breed_types(array $species_slugs): array {
+        $allowed = [];
+        if (in_array('dog', $species_slugs, true)) {
+            $allowed[] = 'akc';
+            $allowed[] = 'designer';
+            $allowed[] = 'just-cute';
+        }
+        if (in_array('cat', $species_slugs, true)) {
+            $allowed[] = 'purebred';
+            $allowed[] = 'mixed';
+            $allowed[] = 'just-cute';
+        }
+        return array_values(array_unique($allowed));
+    }
+
+    private function normalize_label(string $value): string {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        return sanitize_title($value);
+    }
+
+    private function normalize_breed_type(string $value): string {
+        $value = $this->normalize_label($value);
+        $map = [
+            'akc-registered' => 'akc',
+            'akc' => 'akc',
+            'designer' => 'designer',
+            'purebred' => 'purebred',
+            'mixed' => 'mixed',
+            'just-cute' => 'just-cute',
+        ];
+        return $map[$value] ?? '';
     }
 
     private function set_terms(int $post_id, string $taxonomy, array $field_data_array, string $field_id): void {

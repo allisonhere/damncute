@@ -2,12 +2,19 @@
 set -euo pipefail
 
 THEME_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WP_ROOT="$(cd "${THEME_ROOT}/../../.." && pwd)"
 REMOTE_USER="allieher"
 REMOTE_HOST="alliehere.com"
 REMOTE_PORT="1157"
 REMOTE_PATH="/home/allieher/www/damncute/wp-content/themes/damncute"
 SSH_KEY_PATH="${SSH_KEY_PATH:-}"
 SSH_OPTS="-o BatchMode=yes -o IdentitiesOnly=yes"
+LOCAL_URL="${LOCAL_URL:-}"
+REMOTE_URL="${REMOTE_URL:-}"
+
+REMOTE_WP_ROOT="$(dirname "$(dirname "$(dirname "${REMOTE_PATH}")")")"
+
+REMOTE_WP_ROOT="$(dirname "$(dirname "$(dirname "${REMOTE_PATH}")")")"
 
 EXCLUDES=(
   "--exclude=.git/"
@@ -35,9 +42,14 @@ echo "DamnCute Theme Deploy"
 echo "======================"
 echo "Source : ${THEME_ROOT}"
 echo "Target : ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}"
+echo "Local  : ${WP_ROOT}"
+echo "Remote : ${REMOTE_WP_ROOT}"
 echo
 
-read -r -p "Choose: [1] dry-run  [2] publish  [x] quit: " ACTION
+ACTION="${1:-}"
+if [[ -z "${ACTION}" ]]; then
+  read -r -p "Choose: [1] dry-run  [2] publish  [x] quit: " ACTION
+fi
 case "${ACTION}" in
   1)
     echo

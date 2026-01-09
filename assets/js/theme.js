@@ -156,6 +156,7 @@
         }
 
         if (platform === 'card') {
+            // ... (existing card logic) ...
             const originalText = button.textContent;
             button.textContent = 'Designing...';
             
@@ -260,13 +261,52 @@
             return;
         }
 
+        // Native Share (Instagram, TikTok, or Mobile Generic)
+        if (['instagram', 'tiktok'].includes(platform) && navigator.share && isMobile) {
+          try {
+            await navigator.share({
+              title: shareText,
+              text: shareText,
+              url: shareUrl,
+            });
+            updateLabel(button, 'Shared');
+            return;
+          } catch (err) {
+            // User cancelled or share failed, fall through to copy
+            console.warn('Native share failed/cancelled:', err);
+          }
+        }
+
+        // Clipboard Copy (Modern + Legacy Fallback)
         try {
-          if (navigator.clipboard) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(copyText);
-            updateLabel(button, 'Copied');
+            updateLabel(button, 'Copied Link');
+          } else {
+            // Legacy fallback for HTTP/Older Browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = copyText;
+            textArea.style.position = "fixed"; // Avoid scrolling to bottom
+            textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            if (successful) {
+                updateLabel(button, 'Copied Link');
+            } else {
+                throw new Error('execCommand failed');
+            }
           }
         } catch (error) {
-          updateLabel(button, 'Copy failed');
+          console.error('Copy failed:', error);
+          updateLabel(button, 'Copy Failed');
+          
+          // Last resort: Alert (ugly but functional for debugging)
+          // alert('Could not auto-copy. Here is the link:\n' + copyText);
         }
       });
     });
