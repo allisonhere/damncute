@@ -568,6 +568,192 @@
     }
   };
 
+  const initPetOverlay = () => {
+    if (document.body.classList.contains('single-pets')) {
+      return;
+    }
+
+    const state = {
+      container: null,
+      content: null,
+      closeButton: null,
+      listUrl: '',
+      scrollY: 0,
+      currentUrl: '',
+      isOpen: false,
+    };
+
+    const ensureOverlay = () => {
+      if (state.container) {
+        return;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'dc-overlay';
+      overlay.innerHTML = `
+        <div class="dc-overlay__backdrop" data-overlay-close></div>
+        <div class="dc-overlay__panel" role="dialog" aria-modal="true" aria-label="Pet details">
+          <button class="dc-overlay__close" type="button" aria-label="Close pet details" data-overlay-close>Close</button>
+          <div class="dc-overlay__content" data-overlay-content></div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+      state.container = overlay;
+      state.content = overlay.querySelector('[data-overlay-content]');
+      state.closeButton = overlay.querySelector('.dc-overlay__close');
+
+      overlay.addEventListener('click', (event) => {
+        if (event.target.closest('[data-overlay-close]')) {
+          requestClose();
+        }
+      });
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && state.isOpen) {
+          requestClose();
+        }
+      });
+    };
+
+    const overlayUrlFor = (url) => {
+      const overlayUrl = new URL(url, window.location.origin);
+      overlayUrl.searchParams.set('dc_overlay', '1');
+      return overlayUrl.toString();
+    };
+
+    const lockScroll = (scrollY) => {
+      document.body.style.top = `-${scrollY}px`;
+      document.body.classList.add('dc-overlay-open');
+    };
+
+    const unlockScroll = (scrollY) => {
+      document.body.classList.remove('dc-overlay-open');
+      document.body.style.top = '';
+      if (typeof scrollY === 'number') {
+        window.scrollTo(0, scrollY);
+      }
+    };
+
+    const openOverlay = async (url, options = {}) => {
+      const listUrl = options.listUrl || window.location.href;
+      const scrollY = typeof options.scrollY === 'number' ? options.scrollY : window.scrollY;
+
+      ensureOverlay();
+      state.isOpen = true;
+      state.currentUrl = url;
+      state.listUrl = listUrl;
+      state.scrollY = scrollY;
+
+      if (!options.skipHistory) {
+        window.history.replaceState({ dcList: true, scrollY, url: listUrl }, '', listUrl);
+        window.history.pushState({ dcOverlay: true, listUrl, scrollY }, '', url);
+      }
+
+      lockScroll(scrollY);
+      state.container.classList.add('is-open');
+      state.content.innerHTML = '<div class="dc-overlay__loading">Loading pet...</div>';
+
+      try {
+        const response = await fetch(overlayUrlFor(url), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+
+        if (!response.ok) {
+          throw new Error('Overlay request failed');
+        }
+
+        const html = await response.text();
+        state.content.innerHTML = html;
+        initReactions();
+        initShare();
+      } catch (error) {
+        state.content.innerHTML = '<div class="dc-overlay__error">Unable to load this pet right now.</div>';
+      }
+
+      if (state.closeButton) {
+        state.closeButton.focus();
+      }
+    };
+
+    const closeOverlay = (options = {}) => {
+      if (!state.isOpen) {
+        return;
+      }
+
+      state.isOpen = false;
+      state.currentUrl = '';
+      state.container.classList.remove('is-open');
+      state.content.innerHTML = '';
+      unlockScroll(typeof options.scrollY === 'number' ? options.scrollY : state.scrollY);
+    };
+
+    const requestClose = () => {
+      if (!state.isOpen) {
+        return;
+      }
+
+      if (window.history.state && window.history.state.dcOverlay) {
+        window.history.back();
+      } else {
+        closeOverlay();
+      }
+    };
+
+    const shouldIntercept = (link) => {
+      if (!link || !link.href) {
+        return false;
+      }
+
+      if (link.dataset.overlayFull) {
+        return false;
+      }
+
+      if (link.closest('.dc-overlay__panel')) {
+        return false;
+      }
+
+      if (link.target && link.target !== '_self') {
+        return false;
+      }
+
+      const url = new URL(link.href, window.location.origin);
+      if (url.origin !== window.location.origin) {
+        return false;
+      }
+
+      return url.pathname.includes('/pets/');
+    };
+
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('a');
+      if (!shouldIntercept(link)) {
+        return;
+      }
+
+      event.preventDefault();
+      openOverlay(link.href);
+    });
+
+    window.addEventListener('popstate', (event) => {
+      const stateObj = event.state || {};
+      if (stateObj.dcOverlay) {
+        openOverlay(window.location.href, {
+          skipHistory: true,
+          listUrl: stateObj.listUrl || window.location.href,
+          scrollY: typeof stateObj.scrollY === 'number' ? stateObj.scrollY : 0,
+        });
+        return;
+      }
+
+      if (state.isOpen) {
+        closeOverlay({
+          scrollY: typeof stateObj.scrollY === 'number' ? stateObj.scrollY : state.scrollY,
+        });
+      }
+    });
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     initReactions();
     initShare();
@@ -575,5 +761,6 @@
     initFloatingCta();
     initInfiniteScroll();
     initFilterBar();
+    initPetOverlay();
   });
 })();

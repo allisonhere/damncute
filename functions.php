@@ -709,6 +709,84 @@ if (!function_exists('damncute_pet_related_shortcode')) {
 }
 add_shortcode('damncute_pet_related', 'damncute_pet_related_shortcode');
 
+if (!function_exists('damncute_pet_overlay_terms')) {
+    function damncute_pet_overlay_terms(int $post_id, string $taxonomy): string
+    {
+        $terms = get_the_terms($post_id, $taxonomy);
+        if (!is_array($terms) || empty($terms)) {
+            return '';
+        }
+
+        $names = array_map(static function (WP_Term $term): string {
+            return esc_html($term->name);
+        }, $terms);
+
+        return sprintf('<span class="dc-card__meta">%s</span>', implode(', ', $names));
+    }
+}
+
+if (!function_exists('damncute_render_pet_overlay_html')) {
+    function damncute_render_pet_overlay_html(int $post_id): string
+    {
+        $title = get_the_title($post_id);
+        $permalink = get_permalink($post_id);
+        $image = get_the_post_thumbnail($post_id, 'large', ['class' => 'dc-overlay__image']);
+
+        $meta = damncute_pet_overlay_terms($post_id, 'species')
+            . damncute_pet_overlay_terms($post_id, 'breed')
+            . damncute_pet_overlay_terms($post_id, 'vibe');
+
+        $meta_row = $meta !== '' ? sprintf('<div class="dc-overlay__meta">%s</div>', $meta) : '';
+
+        $content = '<div class="dc-overlay__hero">' . $image . '</div>';
+        $content .= '<div class="dc-overlay__body">';
+        $content .= sprintf('<h1 class="dc-overlay__title">%s</h1>', esc_html($title));
+        $content .= $meta_row;
+        $content .= do_shortcode('[damncute_pet_meta]');
+        $content .= do_shortcode('[damncute_pet_sections]');
+        $content .= do_shortcode('[damncute_pet_social]');
+        $content .= do_shortcode('[damncute_pet_gallery]');
+        $content .= sprintf(
+            '<div class="dc-overlay__actions"><a class="dc-overlay__full" data-overlay-full="1" href="%s">%s</a></div>',
+            esc_url($permalink),
+            esc_html__('View full page', 'damncute')
+        );
+        $content .= '</div>';
+
+        return $content;
+    }
+}
+
+if (!function_exists('damncute_register_overlay_query_var')) {
+    function damncute_register_overlay_query_var(array $vars): array
+    {
+        $vars[] = 'dc_overlay';
+        return $vars;
+    }
+}
+add_filter('query_vars', 'damncute_register_overlay_query_var');
+
+if (!function_exists('damncute_render_pet_overlay_response')) {
+    function damncute_render_pet_overlay_response(): void
+    {
+        if (!is_singular('pets') || !get_query_var('dc_overlay')) {
+            return;
+        }
+
+        $post_id = get_the_ID();
+        if (!$post_id) {
+            wp_die(esc_html__('Invalid pet.', 'damncute'));
+        }
+
+        status_header(200);
+        nocache_headers();
+        header('Content-Type: text/html; charset=' . get_option('blog_charset'));
+        echo damncute_render_pet_overlay_html($post_id);
+        exit;
+    }
+}
+add_action('template_redirect', 'damncute_render_pet_overlay_response');
+
 if (!function_exists('damncute_pet_sections_shortcode')) {
     function damncute_pet_sections_shortcode(): string
     {
@@ -1725,6 +1803,10 @@ if (!function_exists('damncute_pet_of_day_metabox_render')) {
             admin_url('admin-post.php?action=damncute_feature_pet_of_day&post_id=' . (int) $post->ID),
             'damncute_feature_pet_of_day'
         );
+        $clear_cache_url = wp_nonce_url(
+            admin_url('admin-post.php?action=damncute_clear_pet_of_day_cache'),
+            'damncute_clear_pet_of_day_cache'
+        );
 
         echo '<p>' . esc_html__('Feature this pet now or schedule it for later.', 'damncute') . '</p>';
 
@@ -1733,6 +1815,11 @@ if (!function_exists('damncute_pet_of_day_metabox_render')) {
         }
 
         echo '<p><a class="button button-primary" href="' . esc_url($feature_url) . '">' . esc_html__('Feature Now', 'damncute') . '</a></p>';
+        echo '<p><a class="button" href="' . esc_url($clear_cache_url) . '">' . esc_html__('Clear Pet of the Day Cache', 'damncute') . '</a></p>';
+
+        if (isset($_GET['dc_pet_of_day_cache_cleared'])) {
+            echo '<p><em>' . esc_html__('Pet of the Day cache cleared.', 'damncute') . '</em></p>';
+        }
 
         echo '<label for="damncute_pet_of_day_at"><strong>' . esc_html__('Schedule time', 'damncute') . '</strong></label>';
         echo '<p><input type="datetime-local" id="damncute_pet_of_day_at" name="damncute_pet_of_day_at" value="' . esc_attr($scheduled) . '" /></p>';
@@ -1781,6 +1868,22 @@ if (!function_exists('damncute_handle_feature_pet_of_day')) {
     }
 }
 add_action('admin_post_damncute_feature_pet_of_day', 'damncute_handle_feature_pet_of_day');
+
+if (!function_exists('damncute_handle_clear_pet_of_day_cache')) {
+    function damncute_handle_clear_pet_of_day_cache(): void
+    {
+        if (!current_user_can('edit_posts')) {
+            wp_die(esc_html__('Permission denied.', 'damncute'));
+        }
+
+        check_admin_referer('damncute_clear_pet_of_day_cache');
+        delete_transient('damncute_pet_of_day_v2');
+
+        wp_safe_redirect(add_query_arg('dc_pet_of_day_cache_cleared', '1', wp_get_referer() ?: admin_url('edit.php?post_type=pets')));
+        exit;
+    }
+}
+add_action('admin_post_damncute_clear_pet_of_day_cache', 'damncute_handle_clear_pet_of_day_cache');
 
 if (!function_exists('damncute_save_pet_of_day_schedule')) {
     function damncute_save_pet_of_day_schedule(int $post_id, WP_Post $post): void
@@ -2144,7 +2247,7 @@ if (!function_exists('damncute_pet_of_day_shortcode')) {
             ? $selected_id
             : get_transient($transient_key);
 
-        if (false === $post_id) {
+        if (!$post_id) {
             $query = new WP_Query([
                 'post_type' => 'pets',
                 'posts_per_page' => 1,
@@ -2281,7 +2384,7 @@ if (!function_exists('damncute_pet_of_day_shortcode')) {
             ? $selected_id
             : get_transient($transient_key);
 
-        if (false === $post_id) {
+        if (!$post_id) {
             $query = new WP_Query([
                 'post_type' => 'pets',
                 'posts_per_page' => 1,
