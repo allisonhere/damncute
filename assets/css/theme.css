@@ -664,6 +664,28 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   box-sizing: border-box;
 }
 
+.dc-back-to-feed {
+  margin-bottom: 1.5rem;
+}
+
+.dc-back-to-feed a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--dc-radius-sm);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-ink);
+  text-decoration: none;
+  font-weight: 600;
+  background: var(--dc-base);
+}
+
+.dc-back-to-feed a:hover,
+.dc-back-to-feed a:focus-visible {
+  background: var(--dc-card);
+}
+
 .dc-card__title, 
 .dc-card__meta, 
 .dc-card__excerpt {

@@ -568,6 +568,159 @@
     }
   };
 
+  const initFeedStateLinks = () => {
+    if (document.body.classList.contains('single-pets')) {
+      return;
+    }
+
+    const isPetLink = (link) => {
+      if (!link || !link.href) {
+        return false;
+      }
+
+      const url = new URL(link.href, window.location.origin);
+      return url.origin === window.location.origin && url.pathname.includes('/pets/');
+    };
+
+    const getFeedUrl = () => {
+      const feedUrl = new URL(window.location.href);
+      feedUrl.searchParams.delete('from');
+      feedUrl.searchParams.delete('scroll');
+      feedUrl.searchParams.set('from', 'feed');
+      feedUrl.searchParams.set('scroll', `${Math.round(window.scrollY)}`);
+      return feedUrl;
+    };
+
+    const decorateLink = (link) => {
+      if (!isPetLink(link)) {
+        return;
+      }
+
+      const feedUrl = getFeedUrl();
+      const petUrl = new URL(link.href, window.location.origin);
+      const scroll = feedUrl.searchParams.get('scroll');
+
+      petUrl.searchParams.set('from', 'feed');
+      if (scroll) {
+        petUrl.searchParams.set('scroll', scroll);
+      }
+      petUrl.searchParams.set('feed', `${feedUrl.pathname}${feedUrl.search}`);
+
+      ['species', 'vibe'].forEach((key) => {
+        const value = feedUrl.searchParams.get(key);
+        if (value) {
+          petUrl.searchParams.set(key, value);
+        }
+      });
+
+      link.href = petUrl.toString();
+    };
+
+    const handleIntent = (event) => {
+      const link = event.target.closest('a');
+      if (!link || !link.closest('.dc-query')) {
+        return;
+      }
+
+      decorateLink(link);
+    };
+
+    document.addEventListener('pointerdown', handleIntent);
+    document.addEventListener('auxclick', handleIntent);
+    document.addEventListener('contextmenu', handleIntent);
+    document.addEventListener('mouseover', handleIntent);
+    document.addEventListener('focusin', handleIntent);
+  };
+
+  const initFeedReturnLink = () => {
+    if (!document.body.classList.contains('single-pets')) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') !== 'feed') {
+      return;
+    }
+
+    const feedParam = params.get('feed') || '';
+    const scroll = params.get('scroll') || '';
+    let backUrl;
+
+    try {
+      backUrl = feedParam
+        ? new URL(decodeURIComponent(feedParam), window.location.origin)
+        : new URL('/pets/', window.location.origin);
+    } catch (error) {
+      backUrl = new URL('/pets/', window.location.origin);
+    }
+
+    if (scroll) {
+      backUrl.searchParams.set('scroll', scroll);
+    }
+    backUrl.searchParams.set('from', 'feed');
+
+    ['species', 'vibe'].forEach((key) => {
+      const value = params.get(key);
+      if (value && !backUrl.searchParams.get(key)) {
+        backUrl.searchParams.set(key, value);
+      }
+    });
+
+    const container = document.querySelector('.dc-section') || document.querySelector('main') || document.body;
+    if (!container) {
+      return;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'dc-back-to-feed';
+    const link = document.createElement('a');
+    link.href = backUrl.toString();
+    link.textContent = 'Back to feed';
+    wrapper.appendChild(link);
+    container.insertBefore(wrapper, container.firstChild);
+  };
+
+  const restoreFeedScroll = () => {
+    if (document.body.classList.contains('single-pets')) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') !== 'feed') {
+      return;
+    }
+
+    const target = parseInt(params.get('scroll') || '0', 10);
+    if (!target) {
+      return;
+    }
+
+    let attempts = 0;
+    const maxAttempts = 12;
+
+    const cleanup = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('scroll');
+      url.searchParams.delete('from');
+      window.history.replaceState({}, '', url.toString());
+    };
+
+    const step = () => {
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (target <= maxScroll || attempts >= maxAttempts) {
+        window.scrollTo(0, Math.min(target, maxScroll));
+        cleanup();
+        return;
+      }
+
+      attempts += 1;
+      window.scrollTo(0, maxScroll);
+      window.setTimeout(step, 450);
+    };
+
+    window.setTimeout(step, 250);
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     initReactions();
     initShare();
@@ -575,5 +728,8 @@
     initFloatingCta();
     initInfiniteScroll();
     initFilterBar();
+    initFeedStateLinks();
+    initFeedReturnLink();
+    restoreFeedScroll();
   });
 })();
