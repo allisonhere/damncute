@@ -671,13 +671,24 @@
       return;
     }
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'dc-back-to-feed';
-    const link = document.createElement('a');
-    link.href = backUrl.toString();
-    link.textContent = 'Back to feed';
-    wrapper.appendChild(link);
-    container.insertBefore(wrapper, container.firstChild);
+    const buildLink = () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'dc-back-to-feed';
+      const link = document.createElement('a');
+      link.href = backUrl.toString();
+      link.textContent = 'Back to feed';
+      wrapper.appendChild(link);
+      return wrapper;
+    };
+
+    const title = container.querySelector('.dc-pet-title');
+    if (title && title.parentNode) {
+      title.parentNode.insertBefore(buildLink(), title.nextSibling);
+    } else {
+      container.insertBefore(buildLink(), container.firstChild);
+    }
+
+    container.appendChild(buildLink());
   };
 
   const restoreFeedScroll = () => {
