@@ -604,7 +604,7 @@
       if (scroll) {
         petUrl.searchParams.set('scroll', scroll);
       }
-      petUrl.searchParams.set('feed', `${feedUrl.pathname}${feedUrl.search}`);
+      petUrl.searchParams.set('dc_feed', `${feedUrl.pathname}${feedUrl.search}`);
 
       ['species', 'vibe'].forEach((key) => {
         const value = feedUrl.searchParams.get(key);
@@ -642,7 +642,7 @@
       return;
     }
 
-    const feedParam = params.get('feed') || '';
+    const feedParam = params.get('dc_feed') || '';
     const scroll = params.get('scroll') || '';
     let backUrl;
 
