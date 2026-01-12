@@ -635,6 +635,35 @@ if (!function_exists('damncute_pet_related_shortcode')) {
         $post_id = get_the_ID();
         $sections = '';
 
+        $owner_social = trim((string) get_post_meta($post_id, 'owner_social', true));
+        if ($owner_social !== '') {
+            $submitter_posts = get_posts([
+                'post_type' => 'pets',
+                'post_status' => 'publish',
+                'posts_per_page' => 4,
+                'post__not_in' => [$post_id],
+                'meta_query' => [
+                    [
+                        'key' => 'owner_social',
+                        'value' => $owner_social,
+                        'compare' => '=',
+                    ],
+                ],
+            ]);
+
+            if (!empty($submitter_posts)) {
+                $cards = '';
+                foreach ($submitter_posts as $post) {
+                    $cards .= damncute_render_pet_card($post->ID);
+                }
+                $sections .= sprintf(
+                    '<section class="dc-related"><h2 class="dc-related__title">%s</h2><div class="dc-grid dc-grid--compact">%s</div></section>',
+                    esc_html__('Also from this submitter', 'damncute'),
+                    $cards
+                );
+            }
+        }
+
         $tax_query = [];
         $species_ids = wp_get_post_terms($post_id, 'species', ['fields' => 'ids']);
         $vibe_ids = wp_get_post_terms($post_id, 'vibe', ['fields' => 'ids']);
@@ -670,35 +699,6 @@ if (!function_exists('damncute_pet_related_shortcode')) {
                 $sections .= sprintf(
                     '<section class="dc-related"><h2 class="dc-related__title">%s</h2><div class="dc-grid dc-grid--compact">%s</div></section>',
                     esc_html__('Related by vibe or species', 'damncute'),
-                    $cards
-                );
-            }
-        }
-
-        $owner_social = trim((string) get_post_meta($post_id, 'owner_social', true));
-        if ($owner_social !== '') {
-            $submitter_posts = get_posts([
-                'post_type' => 'pets',
-                'post_status' => 'publish',
-                'posts_per_page' => 4,
-                'post__not_in' => [$post_id],
-                'meta_query' => [
-                    [
-                        'key' => 'owner_social',
-                        'value' => $owner_social,
-                        'compare' => '=',
-                    ],
-                ],
-            ]);
-
-            if (!empty($submitter_posts)) {
-                $cards = '';
-                foreach ($submitter_posts as $post) {
-                    $cards .= damncute_render_pet_card($post->ID);
-                }
-                $sections .= sprintf(
-                    '<section class="dc-related"><h2 class="dc-related__title">%s</h2><div class="dc-grid dc-grid--compact">%s</div></section>',
-                    esc_html__('Also from this submitter', 'damncute'),
                     $cards
                 );
             }
@@ -2035,23 +2035,36 @@ if (!function_exists('damncute_handle_proxy_image')) {
             return new WP_Error('missing_id', 'Image ID required', ['status' => 400]);
         }
 
-        $url = wp_get_attachment_image_url($image_id, 'large'); // Fetch official URL
+        $url = wp_get_attachment_url($image_id);
         if (!$url) {
              return new WP_Error('invalid_image', 'Image not found', ['status' => 404]);
         }
 
-        $parsed = wp_parse_url($url);
-        $site_host = wp_parse_url(home_url(), PHP_URL_HOST);
-        $uploads = wp_get_upload_dir();
-        $uploads_path = $uploads['baseurl'] ? wp_parse_url($uploads['baseurl'], PHP_URL_PATH) : '';
-        $url_path = $parsed['path'] ?? '';
-
-        if (($parsed['host'] ?? '') !== $site_host || ($uploads_path && strpos($url_path, $uploads_path) !== 0)) {
-            return new WP_Error('invalid_image_url', 'Image URL not allowed', ['status' => 400]);
-        }
-
         if (!wp_attachment_is_image($image_id)) {
             return new WP_Error('invalid_image_type', 'Image must be an image', ['status' => 400]);
+        }
+
+        $uploads = wp_get_upload_dir();
+        $uploads_base = isset($uploads['basedir']) ? realpath($uploads['basedir']) : false;
+        $file_path = get_attached_file($image_id);
+
+        if ($file_path) {
+            $real_path = realpath($file_path);
+            if ($real_path && $uploads_base) {
+                $uploads_base = rtrim($uploads_base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+                if (strpos($real_path, $uploads_base) === 0 && is_readable($real_path)) {
+                    $filetype = wp_check_filetype(basename($real_path), null);
+                    $content_type = $filetype['type'] ?? '';
+                    $body = file_get_contents($real_path);
+                    if ($body !== false) {
+                        status_header(200);
+                        header('Access-Control-Allow-Origin: *');
+                        header('Content-Type: ' . ($content_type ?: 'image/*'));
+                        echo $body;
+                        exit;
+                    }
+                }
+            }
         }
 
         // Fetch image content safely
@@ -2066,10 +2079,11 @@ if (!function_exists('damncute_handle_proxy_image')) {
             return new WP_Error('invalid_content_type', 'Unexpected content type', ['status' => 400]);
         }
 
-        return new WP_REST_Response($body, 200, [
-            'Access-Control-Allow-Origin' => '*',
-            'Content-Type' => $content_type ?: 'image/*',
-        ]);
+        status_header(200);
+        header('Access-Control-Allow-Origin: *');
+        header('Content-Type: ' . ($content_type ?: 'image/*'));
+        echo $body;
+        exit;
     }
 }
 

@@ -188,28 +188,23 @@
                     src = `${window.damncuteData.restUrl}/proxy-image?id=${imageId}`;
                 }
                 
-                // Fetch blob first to handle errors explicitly
-                let blob;
-                try {
-                    const response = await fetch(src);
-                    if (!response.ok) throw new Error(`Network error: ${response.status}`);
-                    blob = await response.blob();
-                } catch (err) {
-                    // Fallback to original source if proxy fails
-                    console.warn('Proxy failed, trying direct', err);
-                    const response = await fetch(imgElement.src);
-                    if (!response.ok) throw new Error('Direct load failed');
-                    blob = await response.blob();
-                }
+                const loadImage = (source) =>
+                    new Promise((resolve, reject) => {
+                        const image = new Image();
+                        image.crossOrigin = 'anonymous';
+                        image.src = source;
+                        image.onload = () => resolve(image);
+                        image.onerror = (event) => reject(event);
+                    });
 
-                const img = new Image();
-                const objectUrl = URL.createObjectURL(blob);
-                img.src = objectUrl;
-                
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                });
+                let img;
+                try {
+                    img = await loadImage(src);
+                } catch (err) {
+                    console.warn('Proxy failed, trying direct', err);
+                    const fallbackSrc = imgElement.currentSrc || imgElement.src;
+                    img = await loadImage(fallbackSrc);
+                }
 
                 // Draw Image (Cover)
 
