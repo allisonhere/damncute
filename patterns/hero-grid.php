@@ -35,6 +35,5 @@
 </div>
 <!-- /wp:group -->
 
-<!-- wp:shortcode -->
-[damncute_vibe_check]
-<!-- /wp:shortcode -->
+<?php echo do_shortcode('[damncute_vibe_check]'); ?>
+
