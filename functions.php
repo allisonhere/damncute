@@ -826,31 +826,50 @@ if (!function_exists('damncute_pet_related_shortcode')) {
         }
 
         if (!empty($tax_query)) {
-            $related_posts = get_posts([
+            $related_posts_query = new WP_Query([
                 'post_type' => 'pets',
                 'post_status' => 'publish',
-                'posts_per_page' => 4,
+                'posts_per_page' => 5, // Fetch 5 to see if there's a next page
                 'post__not_in' => [$post_id],
                 'tax_query' => array_merge(['relation' => 'OR'], $tax_query),
+                'fields' => 'ids', // Lightweight
             ]);
 
-            if (!empty($related_posts)) {
+            if ($related_posts_query->have_posts()) {
+                // Actually fetch the 4 cards for display
+                $display_posts = get_posts([
+                    'post_type' => 'pets',
+                    'post_status' => 'publish',
+                    'posts_per_page' => 4,
+                    'post__not_in' => [$post_id],
+                    'include' => array_slice($related_posts_query->posts, 0, 4),
+                ]);
+
                 $cards = '';
-                foreach ($related_posts as $post) {
-                    $cards .= damncute_render_pet_card($post->ID);
+                foreach ($display_posts as $p) {
+                    $cards .= damncute_render_pet_card($p->ID);
                 }
+                
+                $button_html = '';
+                if ($related_posts_query->found_posts > 4) {
+                    $button_html = sprintf(
+                        '<div class="dc-load-more-wrapper" style="text-align:center; margin-top:2rem;">
+                            <button class="wp-element-button dc-load-more-related" data-offset="4">🔄 %s</button>
+                        </div>',
+                        esc_html__('Load More Cuteness', 'damncute')
+                    );
+                }
+
                 $sections .= sprintf(
                     '<section class="dc-related" id="dc-related-section">
                         <h2 class="dc-related__title">%s</h2>
                         <div class="dc-grid dc-grid--compact" id="dc-related-grid" data-post-id="%d">%s</div>
-                        <div class="dc-load-more-wrapper" style="text-align:center; margin-top:2rem;">
-                            <button class="wp-element-button dc-load-more-related" data-offset="4">🔄 %s</button>
-                        </div>
+                        %s
                     </section>',
                     esc_html__('More pets to adore', 'damncute'),
                     $post_id,
                     $cards,
-                    esc_html__('Load More Cuteness', 'damncute')
+                    $button_html
                 );
             }
         }
