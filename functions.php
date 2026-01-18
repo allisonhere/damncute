@@ -2370,8 +2370,8 @@ if (!function_exists('damncute_card_meta_shortcode')) {
 
         // Force output for testing if both empty
         if (empty($vibe_html) && empty($hearts_html)) {
-             // return '<div class="dc-card-header" style="color:red;">DEBUG: Meta Empty</div>';
-             return '';
+             return '<div class="dc-card-header" style="color:red; font-size:10px;">DEBUG: No Data</div>';
+             // return '';
         }
 
         return sprintf('<div class="dc-card-header">%s %s</div>', $vibe_html, $hearts_html);
