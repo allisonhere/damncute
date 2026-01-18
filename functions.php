@@ -387,7 +387,7 @@ if (!function_exists('damncute_vibe_check_shortcode')) {
     {
         $terms = get_terms([
             'taxonomy' => 'vibe',
-            'hide_empty' => true,
+            'hide_empty' => false,
             'orderby' => 'count',
             'order' => 'DESC',
             'number' => 12,
