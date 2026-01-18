@@ -181,13 +181,6 @@ header.wp-block-group {
 
 .dc-logo a {
   display: block;
-  width: 280px;
-  height: 160px;
-  background-image: url("../../logo.png");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: left center;
-  text-indent: -9999px;
   margin: 0;
 }
 
