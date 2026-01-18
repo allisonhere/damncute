@@ -2350,6 +2350,10 @@ if (!function_exists('damncute_card_meta_shortcode')) {
             $emoji = get_term_meta($vibe->term_id, 'emoji', true) ?: '';
             $vibe_label = $emoji ? $emoji . ' ' . $vibe->name : $vibe->name;
             $vibe_html = sprintf('<span class="dc-card-vibe">%s</span>', esc_html($vibe_label));
+        } else {
+            // Debug output to confirm rendering
+            // $vibe_html = '<span class="dc-card-vibe">No Vibe</span>'; 
+            $vibe_html = '';
         }
 
         // Get Reactions
@@ -2359,7 +2363,15 @@ if (!function_exists('damncute_card_meta_shortcode')) {
             else $hearts_display = $hearts;
             $hearts_html = sprintf('<span class="dc-card-hearts">❤️ %s</span>', $hearts_display);
         } else {
-            $hearts_html = '';
+             // Debug output
+             // $hearts_html = '<span class="dc-card-hearts">No Hearts</span>';
+             $hearts_html = '';
+        }
+
+        // Force output for testing if both empty
+        if (empty($vibe_html) && empty($hearts_html)) {
+             // return '<div class="dc-card-header" style="color:red;">DEBUG: Meta Empty</div>';
+             return '';
         }
 
         return sprintf('<div class="dc-card-header">%s %s</div>', $vibe_html, $hearts_html);
