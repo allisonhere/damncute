@@ -699,6 +699,8 @@ if (!function_exists('damncute_pet_social_shortcode')) {
         }
 
         $image_id = get_post_thumbnail_id($post_id);
+        $comment_count = get_comments_number($post_id);
+        $comment_label = ($comment_count > 0) ? sprintf(__('Discussion (%d)', 'damncute'), $comment_count) : __('Start Discussion', 'damncute');
 
         $reaction_buttons = '';
         foreach (damncute_reaction_map() as $key => $emoji) {
@@ -712,7 +714,7 @@ if (!function_exists('damncute_pet_social_shortcode')) {
         }
 
         return sprintf(
-            '<div class="dc-social" data-image-id="%d" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="card">%s</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button></div></div>',
+            '<div class="dc-social" data-image-id="%d" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="card">%s</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button><button class="dc-share-button dc-comment-toggle" type="button" data-toggle-comments>💬 %s</button></div></div>',
             (int) $image_id,
             esc_attr($share_text),
             esc_url($share_url),
@@ -721,7 +723,8 @@ if (!function_exists('damncute_pet_social_shortcode')) {
             $reaction_buttons,
             esc_html__('Share', 'damncute'),
             esc_html__('Poster', 'damncute'),
-            esc_html__('Copy link', 'damncute')
+            esc_html__('Copy link', 'damncute'),
+            esc_html($comment_label)
         );
     }
 }

@@ -1042,6 +1042,23 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   border: 1px solid var(--dc-border);
   border-radius: var(--dc-radius-md);
   background: var(--dc-card);
+  display: none; /* Hidden by default */
+}
+
+.dc-comments.is-open {
+  display: block;
+  animation: dc-fade-up 0.4s ease both;
+}
+
+.dc-comment-toggle {
+  background: rgba(124, 92, 255, 0.15) !important;
+  color: #a07cff !important;
+  border-color: rgba(124, 92, 255, 0.3) !important;
+}
+
+.dc-comment-toggle:hover {
+  background: rgba(124, 92, 255, 0.25) !important;
+  box-shadow: 0 8px 24px rgba(124, 92, 255, 0.2) !important;
 }
 
 .dc-comment {

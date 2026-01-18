@@ -889,6 +889,21 @@
     });
   };
 
+  const initCommentToggle = () => {
+    const toggle = document.querySelector('[data-toggle-comments]');
+    const comments = document.querySelector('.dc-comments');
+    if (!toggle || !comments) return;
+
+    toggle.addEventListener('click', () => {
+      const isOpen = comments.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', isOpen);
+      
+      if (isOpen) {
+        comments.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     initReactions();
     initShare();
@@ -901,5 +916,6 @@
     initFeedReturnLink();
     restoreFeedScroll();
     initRelatedLoadMore();
+    initCommentToggle();
   });
 })();
