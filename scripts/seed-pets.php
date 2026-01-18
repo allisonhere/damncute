@@ -671,6 +671,7 @@ foreach (array_slice($pet_seed, 0, $count) as $pet) {
     update_post_meta($post_id, 'age', $pet['age']);
     update_post_meta($post_id, 'owner_social', $pet['owner']);
     update_post_meta($post_id, 'adoption_status', $pet['adoption']);
+    update_post_meta($post_id, 'reaction_total', rand(120, 4500)); // Seed random hearts
 
     $species_id = ensure_term($pet['species'], 'species');
     if ($species_id) {
