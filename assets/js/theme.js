@@ -847,8 +847,8 @@
       btn.textContent = 'Loading...';
       btn.disabled = true;
 
-      const page = parseInt(btn.dataset.page, 10);
-      const apiUrl = `${window.damncuteData.restUrl}/related/${postId}?page=${page}`;
+      const offset = parseInt(btn.dataset.offset, 10);
+      const apiUrl = `${window.damncuteData.restUrl}/related/${postId}?offset=${offset}`;
 
       try {
         const res = await fetch(apiUrl);
@@ -872,7 +872,7 @@
           // Re-bind interactions
           initReactions(); 
           
-          btn.dataset.page = page + 1;
+          btn.dataset.offset = offset + 8; // Increment by batch size
           btn.textContent = originalText;
           btn.disabled = false;
 

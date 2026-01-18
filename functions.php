@@ -844,7 +844,7 @@ if (!function_exists('damncute_pet_related_shortcode')) {
                         <h2 class="dc-related__title">%s</h2>
                         <div class="dc-grid dc-grid--compact" id="dc-related-grid" data-post-id="%d">%s</div>
                         <div class="dc-load-more-wrapper" style="text-align:center; margin-top:2rem;">
-                            <button class="wp-element-button dc-load-more-related" data-page="1">🔄 %s</button>
+                            <button class="wp-element-button dc-load-more-related" data-offset="4">🔄 %s</button>
                         </div>
                     </section>',
                     esc_html__('More pets to adore', 'damncute'),
@@ -874,7 +874,8 @@ add_action('rest_api_init', 'damncute_register_related_endpoint');
 if (!function_exists('damncute_get_related_html')) {
     function damncute_get_related_html(WP_REST_Request $request) {
         $post_id = absint($request['id']);
-        $page = absint($request->get_param('page')) ?: 1;
+        $offset = absint($request->get_param('offset')) ?: 4;
+        $count = 8;
         
         $tax_query = [];
         $species_ids = wp_get_post_terms($post_id, 'species', ['fields' => 'ids']);
@@ -894,8 +895,8 @@ if (!function_exists('damncute_get_related_html')) {
         $query = new WP_Query([
             'post_type' => 'pets',
             'post_status' => 'publish',
-            'posts_per_page' => 8, // Load 8 at a time
-            'paged' => $page + 1, // Next page
+            'posts_per_page' => $count,
+            'offset' => $offset,
             'post__not_in' => [$post_id],
             'tax_query' => array_merge(['relation' => 'OR'], $tax_query),
         ]);
@@ -908,10 +909,13 @@ if (!function_exists('damncute_get_related_html')) {
             }
             wp_reset_postdata();
         }
+        
+        // Simple check: if we got fewer posts than requested, we are done
+        $has_next = $query->post_count >= $count;
 
         return rest_ensure_response([
             'html' => $html,
-            'has_next' => $page + 1 < $query->max_num_pages,
+            'has_next' => $has_next,
         ]);
     }
 }
