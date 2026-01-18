@@ -1,7 +1,7 @@
 <?php
 /**
  * Title: Pet Card
- * Slug: damncute/card-pet
+ * Slug: damncute/card-pet-v2
  * Categories: damncute
  * Inserter: false
  */
