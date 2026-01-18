@@ -570,12 +570,11 @@ if (!function_exists('damncute_render_pet_card')) {
 
         return sprintf(
             '<div class="dc-card dc-card--compact"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body">%s<h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div>',
-            esc_url($permalink),
-            $image,
-            esc_url($permalink),
-            $meta_output, // Meta goes ABOVE title now
-            esc_url($permalink),
-            esc_html($title)
+            esc_url($permalink), // 1. Media Link
+            $image,              // 2. Image
+            $meta_output,        // 3. Meta (Body Start)
+            esc_url($permalink), // 4. Title Link
+            esc_html($title)     // 5. Title Text
         );
     }
 }
