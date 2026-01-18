@@ -1,7 +1,7 @@
 <?php
 /**
  * Title: Hero Grid
- * Slug: damncute/hero-grid
+ * Slug: damncute/hero-grid-v2
  * Categories: damncute
  */
 ?>
