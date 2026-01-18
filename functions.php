@@ -629,7 +629,7 @@ if (!function_exists('damncute_pet_grid_shortcode')) {
         $cards = '';
         while ($query->have_posts()) {
             $query->the_post();
-            $cards .= damncute_render_pet_card(get_the_ID());
+            $cards .= damncute_render_pet_card((int) get_the_ID());
         }
         wp_reset_postdata();
 
