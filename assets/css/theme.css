@@ -64,19 +64,6 @@ p:empty {
   opacity: 1;
 }
 
-.dc-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(124, 92, 255, 0.2);
-  border-top-color: var(--dc-button);
-  border-radius: 50%;
-  animation: dc-spin 0.8s linear infinite;
-}
-
-@keyframes dc-spin {
-  to { transform: rotate(360deg); }
-}
-
 .dc-card--anim {
   animation: dc-fade-up 0.6s ease both;
 }
@@ -596,8 +583,11 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .dc-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 24px 60px rgba(18, 18, 18, 0.12);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 30px 70px rgba(0, 0, 0, 0.45),
+    0 0 20px rgba(124, 92, 255, 0.1);
+  border-color: rgba(124, 92, 255, 0.3);
 }
 
 .dc-card--compact {
@@ -1891,17 +1881,74 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .dc-skeleton {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
   background-size: 200% 100%;
-  animation: dc-skeleton 1.2s infinite;
+  animation: dc-skeleton 1.5s infinite linear;
+  border-radius: var(--dc-radius-md);
 }
 
 @keyframes dc-skeleton {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.dc-skeleton-card {
+  aspect-ratio: 4 / 5;
+  width: 100%;
+  background: var(--dc-card);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dc-skeleton-media {
+  flex: 1;
+  background: #222;
+  position: relative;
+  overflow: hidden;
+}
+
+.dc-skeleton-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+  animation: dc-skeleton 1.5s infinite;
+}
+
+.dc-skeleton-text {
+  padding: 1rem;
+  height: 80px;
+}
+
+.dc-skeleton-line {
+  height: 12px;
+  background: #2a2a2a;
+  border-radius: 4px;
+  margin-bottom: 0.8rem;
+  width: 80%;
+}
+
+.dc-skeleton-line--short {
+  width: 40%;
+}
+
+.dc-loader {
+  display: grid !important; /* Switch to grid to show cards */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: clamp(1rem, 0.7rem + 0.8vw, 1.8rem);
+  padding: 2rem 0;
+  width: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+@media (min-width: 960px) {
+  .dc-loader {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
 

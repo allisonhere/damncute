@@ -490,6 +490,13 @@
               const temp = document.createElement('div');
               temp.innerHTML = data.html;
               
+              // Handle smooth image reveal
+              temp.querySelectorAll('img').forEach(img => {
+                  img.style.opacity = '0';
+                  img.style.transition = 'opacity 0.6s ease';
+                  img.onload = () => { img.style.opacity = '1'; };
+              });
+
               // Find the grid container (first div inside post-template usually)
               // But WP Query block structure is tricky. We look for the parent of existing cards.
               const grid = query.querySelector('.dc-grid') || query.querySelector('.wp-block-post-template');

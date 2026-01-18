@@ -1,25 +1,43 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
-<!-- wp:group {"align":"wide","className":"dc-section"} -->
-<div class="wp-block-group alignwide dc-section">
-    <!-- wp:heading {"level":1} -->
-    <h1>Page not found</h1>
+<!-- wp:group {"align":"wide","className":"dc-section","layout":{"type":"flex","orientation":"vertical","justifyContent":"center","alignItems":"center"}} -->
+<div class="wp-block-group alignwide dc-section" style="text-align:center; min-height: 60vh;">
+    <!-- wp:heading {"textAlign":"center","level":1,"style":{"typography":{"fontSize":"clamp(3rem, 5vw, 6rem)"}}} -->
+    <h1 class="has-text-align-center" style="font-size:clamp(3rem, 5vw, 6rem)">404</h1>
     <!-- /wp:heading -->
 
-    <!-- wp:paragraph -->
-    <p>That link doesn’t exist. Try the homepage or search for a pet instead.</p>
+    <!-- wp:paragraph {"align":"center","style":{"typography":{"fontSize":"1.5rem"}}} -->
+    <p class="has-text-align-center" style="font-size:1.5rem"><strong>Oh no! This page went off-leash.</strong></p>
     <!-- /wp:paragraph -->
 
-    <!-- wp:buttons -->
+    <!-- wp:paragraph {"align":"center","style":{"color":"var:preset|color|mute"}} -->
+    <p class="has-text-align-center" style="color:var(--dc-mute)">We couldn’t find what you were looking for. It might have chasing a squirrel, or maybe it never existed.</p>
+    <!-- /wp:paragraph -->
+
+    <!-- wp:spacer {"height":"2rem"} -->
+    <div style="height:2rem" aria-hidden="true" class="wp-block-spacer"></div>
+    <!-- /wp:spacer -->
+
+    <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} -->
     <div class="wp-block-buttons">
-        <!-- wp:button -->
-        <div class="wp-block-button"><a class="wp-block-button__link" href="/">Back to home</a></div>
+        <!-- wp:button {"className":"is-style-fill"} -->
+        <div class="wp-block-button is-style-fill"><a class="wp-block-button__link wp-element-button" href="/">Back to the Pets</a></div>
         <!-- /wp:button -->
     </div>
     <!-- /wp:buttons -->
 
-    <!-- wp:search {"label":"Search","showLabel":false,"placeholder":"Search pets...","buttonText":"Search","buttonUseIcon":false,"className":"dc-search"} /-->
+    <!-- wp:spacer {"height":"3rem"} -->
+    <div style="height:3rem" aria-hidden="true" class="wp-block-spacer"></div>
+    <!-- /wp:spacer -->
+
+    <!-- wp:group {"style":{"spacing":{"margin":{"top":"2rem"}}},"layout":{"type":"flex","orientation":"vertical","alignItems":"center"}} -->
+    <div class="wp-block-group" style="margin-top:2rem">
+        <!-- wp:search {"label":"Search","showLabel":false,"placeholder":"Search for a different pet...","buttonText":"Search","buttonUseIcon":false,"className":"dc-search"} /-->
+    </div>
+    <!-- /wp:group -->
 </div>
 <!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
 
 <!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
