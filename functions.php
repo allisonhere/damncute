@@ -2379,6 +2379,23 @@ if (!function_exists('damncute_card_meta_shortcode')) {
 }
 add_shortcode('damncute_card_meta', 'damncute_card_meta_shortcode');
 
+if (!function_exists('damncute_hearts_only_shortcode')) {
+    function damncute_hearts_only_shortcode(): string {
+        $post_id = get_the_ID();
+        $hearts = (int) get_post_meta($post_id, 'reaction_total', true);
+        
+        if ($hearts <= 0) {
+            return '';
+        }
+
+        if ($hearts > 1000) $hearts_display = round($hearts / 1000, 1) . 'k';
+        else $hearts_display = $hearts;
+
+        return sprintf('<span class="dc-card-hearts">❤️ %s</span>', $hearts_display);
+    }
+}
+add_shortcode('damncute_hearts_only', 'damncute_hearts_only_shortcode');
+
 if (!function_exists('damncute_pet_of_day_shortcode')) {
     function damncute_pet_of_day_shortcode(): string
     {

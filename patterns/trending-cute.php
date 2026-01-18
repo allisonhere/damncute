@@ -22,6 +22,9 @@
             <div class="wp-block-group dc-card__body">
                 <div class="dc-card-header">
                     <!-- wp:post-terms {"taxonomy":"vibe","className":"dc-card-vibe"} /-->
+                    <!-- wp:shortcode -->
+                    [damncute_hearts_only]
+                    <!-- /wp:shortcode -->
                 </div>
                 <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
             </div>
