@@ -5,8 +5,8 @@
  * Categories: damncute
  */
 ?>
-<!-- wp:group {"align":"wide","className":"dc-section dc-submit"} -->
-<div class="wp-block-group alignwide dc-section dc-submit">
+<!-- wp:group {"align":"wide","className":"dc-section dc-submit dc-section--cta"} -->
+<div class="wp-block-group alignwide dc-section dc-submit dc-section--cta">
     <!-- wp:heading {"level":2} -->
     <h2>Got a pet that melts hearts?</h2>
     <!-- /wp:heading -->

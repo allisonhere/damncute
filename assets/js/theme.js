@@ -117,6 +117,10 @@
       }, 1600);
     };
 
+    const openShareWindow = (url) => {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
     buttons.forEach((button) => {
       button.addEventListener('click', async () => {
         const platform = button.dataset.sharePlatform;
@@ -125,7 +129,11 @@
           container?.dataset.shareText || document.title || 'Damn Cute';
         const shareUrl = container?.dataset.shareUrl || window.location.href;
         const copyText = `${shareText} ${shareUrl}`;
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const ua = navigator.userAgent;
+        const isAndroid = /Android/i.test(ua);
+        const isIOS = /iPhone|iPad|iPod/i.test(ua);
+        const isMobile = isAndroid || isIOS;
+        let copyLabel = 'Copied Link';
 
         if (platform === 'x') {
           const webUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
@@ -153,6 +161,36 @@
              window.open(webUrl, '_blank', 'noopener,noreferrer');
           }
           return;
+        }
+
+        if (platform === 'instagram') {
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: shareText,
+                text: shareText,
+                url: shareUrl,
+              });
+              updateLabel(button, 'Shared');
+              return;
+            } catch (err) {
+              console.warn('Native share failed/cancelled:', err);
+            }
+          }
+
+          if (isMobile) {
+            if (isAndroid) {
+              window.location = 'intent://instagram.com/#Intent;package=com.instagram.android;scheme=https;end';
+            } else if (isIOS) {
+              window.location = 'instagram://app';
+            }
+            copyLabel = 'Link copied - open IG';
+          } else {
+            openShareWindow('https://www.instagram.com/');
+          }
+          if (!isMobile) {
+            copyLabel = 'Link copied - paste in IG';
+          }
         }
 
         if (platform === 'card') {
@@ -256,27 +294,11 @@
             return;
         }
 
-        // Native Share (Instagram, TikTok, or Mobile Generic)
-        if (['instagram', 'tiktok'].includes(platform) && navigator.share && isMobile) {
-          try {
-            await navigator.share({
-              title: shareText,
-              text: shareText,
-              url: shareUrl,
-            });
-            updateLabel(button, 'Shared');
-            return;
-          } catch (err) {
-            // User cancelled or share failed, fall through to copy
-            console.warn('Native share failed/cancelled:', err);
-          }
-        }
-
         // Clipboard Copy (Modern + Legacy Fallback)
         try {
           if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(copyText);
-            updateLabel(button, 'Copied Link');
+            updateLabel(button, copyLabel);
           } else {
             // Legacy fallback for HTTP/Older Browsers
             const textArea = document.createElement("textarea");
@@ -291,7 +313,7 @@
             document.body.removeChild(textArea);
             
             if (successful) {
-                updateLabel(button, 'Copied Link');
+                updateLabel(button, copyLabel);
             } else {
                 throw new Error('execCommand failed');
             }
@@ -563,6 +585,61 @@
     }
   };
 
+  const initFilterGroups = () => {
+    const groups = document.querySelectorAll('.dc-filters__group[data-filter-group]');
+    if (!groups.length) {
+      return;
+    }
+
+    const normalizePath = (path) => path.replace(/\/+$/, '');
+    const currentPath = normalizePath(window.location.pathname);
+
+    groups.forEach((group) => {
+      const limit = parseInt(group.dataset.limit || '8', 10);
+      const chips = Array.from(group.querySelectorAll('a.dc-chip'));
+      const toggle = group.querySelector('[data-filter-toggle]');
+
+      if (!toggle || chips.length <= limit) {
+        if (toggle) {
+          toggle.remove();
+        }
+        return;
+      }
+
+      let activeChip = null;
+      chips.forEach((chip) => {
+        try {
+          const chipPath = normalizePath(new URL(chip.href).pathname);
+          if (chipPath === currentPath) {
+            chip.classList.add('is-active');
+            activeChip = chip;
+          }
+        } catch (err) {
+          // Ignore malformed URLs.
+        }
+      });
+
+      const applyState = (expanded) => {
+        group.classList.toggle('is-expanded', expanded);
+        chips.forEach((chip, index) => {
+          const shouldHide = !expanded && index >= limit && chip !== activeChip;
+          chip.classList.toggle('is-hidden', shouldHide);
+          chip.setAttribute('aria-hidden', shouldHide ? 'true' : 'false');
+        });
+        toggle.textContent = expanded
+          ? toggle.dataset.labelLess || 'Less'
+          : toggle.dataset.labelMore || 'More';
+      };
+
+      const startExpanded = activeChip && chips.indexOf(activeChip) >= limit;
+      applyState(startExpanded);
+
+      toggle.addEventListener('click', () => {
+        applyState(!group.classList.contains('is-expanded'));
+      });
+    });
+  };
+
   const initFeedStateLinks = () => {
     if (document.body.classList.contains('single-pets')) {
       return;
@@ -734,6 +811,7 @@
     initFloatingCta();
     initInfiniteScroll();
     initFilterBar();
+    initFilterGroups();
     initFeedStateLinks();
     initFeedReturnLink();
     restoreFeedScroll();

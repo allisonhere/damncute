@@ -5,8 +5,8 @@
  * Categories: damncute
  */
 ?>
-<!-- wp:group {"align":"wide","className":"dc-section"} -->
-<div class="wp-block-group alignwide dc-section">
+<!-- wp:group {"align":"wide","className":"dc-section dc-section--trending"} -->
+<div class="wp-block-group alignwide dc-section dc-section--trending">
     <!-- wp:heading {"level":2} -->
     <h2>Trending Cute</h2>
     <!-- /wp:heading -->

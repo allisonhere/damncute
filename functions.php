@@ -389,6 +389,7 @@ if (!function_exists('damncute_term_filters_shortcode')) {
             'species' => __('Species', 'damncute'),
             'vibe' => __('Vibe', 'damncute'),
         ];
+        $limit = (int) apply_filters('damncute_term_filter_limit', 8);
 
         $html = '<div class="dc-filters">';
         foreach ($taxonomies as $taxonomy => $label) {
@@ -396,13 +397,34 @@ if (!function_exists('damncute_term_filters_shortcode')) {
             if (empty($terms) || is_wp_error($terms)) {
                 continue;
             }
-            $html .= '<div class="dc-filters__group">';
+            $current_slug = '';
+            if (is_tax($taxonomy)) {
+                $queried = get_queried_object();
+                if ($queried && isset($queried->slug)) {
+                    $current_slug = (string) $queried->slug;
+                }
+            }
+
+            $html .= sprintf(
+                '<div class="dc-filters__group" data-filter-group data-limit="%d">',
+                $limit
+            );
             $html .= sprintf('<span class="dc-filters__label">%s</span>', esc_html($label));
             foreach ($terms as $term) {
+                $active_class = $current_slug !== '' && $term->slug === $current_slug ? ' is-active' : '';
                 $html .= sprintf(
-                    '<a class="dc-chip" href="%s">%s</a>',
+                    '<a class="dc-chip%s" href="%s">%s</a>',
+                    esc_attr($active_class),
                     esc_url(get_term_link($term)),
                     esc_html($term->name)
+                );
+            }
+            if (count($terms) > $limit) {
+                $html .= sprintf(
+                    '<button class="dc-chip dc-chip--toggle" type="button" data-filter-toggle data-label-more="%s" data-label-less="%s">%s</button>',
+                    esc_attr__('More', 'damncute'),
+                    esc_attr__('Less', 'damncute'),
+                    esc_html__('More', 'damncute')
                 );
             }
             $html .= '</div>';
@@ -569,7 +591,7 @@ if (!function_exists('damncute_pet_social_shortcode')) {
         }
 
         return sprintf(
-            '<div class="dc-social" data-image-id="%d" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="tiktok">TikTok</button><button class="dc-share-button" type="button" data-share-platform="card">%s</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button></div></div>',
+            '<div class="dc-social" data-image-id="%d" data-share-text="%s" data-share-url="%s"><div class="dc-social__row">%s<div class="dc-reactions" data-reaction-group data-post-id="%d">%s</div></div><div class="dc-share-row"><span class="dc-share__label">%s</span><button class="dc-share-button" type="button" data-share-platform="x">X</button><button class="dc-share-button" type="button" data-share-platform="facebook">Facebook</button><button class="dc-share-button" type="button" data-share-platform="instagram">IG</button><button class="dc-share-button" type="button" data-share-platform="card">%s</button><button class="dc-share-button" type="button" data-share-platform="copy">%s</button></div></div>',
             (int) $image_id,
             esc_attr($share_text),
             esc_url($share_url),
@@ -722,6 +744,7 @@ if (!function_exists('damncute_pet_sections_shortcode')) {
         if ($content !== '') {
             $sections[] = [
                 'title' => __('Why are they so cute?', 'damncute'),
+                'icon' => '❤️',
                 'body' => apply_filters('the_content', $content),
                 'raw' => true,
             ];
@@ -731,6 +754,7 @@ if (!function_exists('damncute_pet_sections_shortcode')) {
         if ($about !== '') {
             $sections[] = [
                 'title' => __('About', 'damncute'),
+                'icon' => '🐾',
                 'body' => wpautop(esc_html($about)),
                 'raw' => false,
             ];
@@ -740,6 +764,7 @@ if (!function_exists('damncute_pet_sections_shortcode')) {
         if ($favorite_snack !== '') {
             $sections[] = [
                 'title' => __('Favorite snack', 'damncute'),
+                'icon' => '🦴',
                 'body' => wpautop(esc_html($favorite_snack)),
                 'raw' => false,
             ];
@@ -751,8 +776,14 @@ if (!function_exists('damncute_pet_sections_shortcode')) {
 
         $output = '';
         foreach ($sections as $section) {
+            $icon = isset($section['icon']) ? $section['icon'] : '';
+            $icon_html = $icon !== '' ? '<span class="dc-pet-section__icon" aria-hidden="true">' . $icon . '</span>' : '';
             $output .= '<section class="dc-pet-section">';
-            $output .= sprintf('<h2 class="dc-pet-section__title">%s</h2>', esc_html($section['title']));
+            $output .= sprintf(
+                '<h2 class="dc-pet-section__title">%s<span class="dc-pet-section__text">%s</span></h2>',
+                $icon_html,
+                esc_html($section['title'])
+            );
             $output .= '<div class="dc-pet-section__body">' . $section['body'] . '</div>';
             $output .= '</section>';
         }

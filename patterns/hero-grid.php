@@ -5,8 +5,8 @@
  * Categories: damncute
  */
 ?>
-<!-- wp:group {"align":"wide","className":"dc-section dc-hero"} -->
-<div class="wp-block-group alignwide dc-section dc-hero">
+<!-- wp:group {"align":"wide","className":"dc-section dc-hero dc-hero--news"} -->
+<div class="wp-block-group alignwide dc-section dc-hero dc-hero--news">
     <!-- wp:group {"style":{"spacing":{"blockGap":"0"}},"layout":{"type":"flex","orientation":"vertical","justifyContent":"center","alignItems":"center"}} -->
     <div class="wp-block-group" style="text-align:center;">
         <!-- wp:heading {"textAlign":"center","level":2,"className":"dc-hero__title"} -->
