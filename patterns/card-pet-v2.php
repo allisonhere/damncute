@@ -8,6 +8,7 @@
 ?>
 <!-- wp:group {"className":"dc-card"} -->
 <div class="wp-block-group dc-card">
+    <?php die('PHP IS RUNNING'); ?>
     <!-- wp:post-featured-image {"isLink":true,"sizeSlug":"large","className":"dc-card__media"} /-->
     
     <!-- wp:group {"className":"dc-card__body","style":{"spacing":{"blockGap":"0"}}} -->
