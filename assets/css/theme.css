@@ -100,7 +100,7 @@ p:empty {
 }
 
 .dc-section {
-  padding: clamp(2rem, 1.4rem + 2vw, 3.5rem) 0;
+  padding-block: clamp(2rem, 1.4rem + 2vw, 3.5rem);
 }
 
 .error404 .dc-header {
@@ -668,7 +668,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .dc-card__body {
-  padding: .2rem 4rem 2rem 1rem !important; /* Tighter top padding */
+  padding: 1.2rem 1.5rem 1.8rem !important;
   box-sizing: border-box;
 }
 
@@ -698,7 +698,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 .dc-card__meta, 
 .dc-card__excerpt {
   margin-left: 0 !important;
-  padding-left: 20px !important; /* Significant indent */
+  padding-left: 0 !important;
   text-align: left !important;
   display: block;
 }
@@ -1963,7 +1963,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   }
 
   .dc-section {
-    padding: clamp(3rem, 2rem + 2vw, 5rem) 0;
+    padding-block: clamp(3rem, 2rem + 2vw, 5rem);
   }
 
   .dc-grid {
@@ -2071,7 +2071,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   }
 
   .home .dc-section {
-    padding: clamp(1.8rem, 1.4rem + 1.2vw, 2.6rem) 0;
+    padding-block: clamp(1.8rem, 1.4rem + 1.2vw, 2.6rem);
   }
 
   .home .dc-header {
@@ -2106,7 +2106,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   }
 
   .dc-card__body {
-    padding: 0.6rem 2.5rem 2.2rem 1.4rem !important;
+    padding: 1.5rem 2rem 2.5rem !important;
   }
 
   .home .dc-hero--news {
