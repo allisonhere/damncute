@@ -832,7 +832,9 @@ if (!function_exists('damncute_pet_related_shortcode')) {
                 'posts_per_page' => 5, // Fetch 5 to see if there's a next page
                 'post__not_in' => [$post_id],
                 'tax_query' => array_merge(['relation' => 'OR'], $tax_query),
-                'fields' => 'ids', // Lightweight
+                'orderby' => 'ID', // Deterministic sort
+                'order' => 'DESC',
+                'fields' => 'ids',
             ]);
 
             if ($related_posts_query->have_posts()) {
@@ -843,6 +845,8 @@ if (!function_exists('damncute_pet_related_shortcode')) {
                     'posts_per_page' => 4,
                     'post__not_in' => [$post_id],
                     'include' => array_slice($related_posts_query->posts, 0, 4),
+                    'orderby' => 'ID', // Match query
+                    'order' => 'DESC',
                 ]);
 
                 $cards = '';
@@ -917,6 +921,8 @@ if (!function_exists('damncute_get_related_html')) {
             'posts_per_page' => $count,
             'offset' => $offset,
             'post__not_in' => [$post_id],
+            'orderby' => 'ID', // Deterministic sort
+            'order' => 'DESC',
             'tax_query' => array_merge(['relation' => 'OR'], $tax_query),
         ]);
 
