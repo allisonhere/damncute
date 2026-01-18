@@ -1952,7 +1952,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 @media (min-width: 960px) {
   .wp-site-blocks {
-    max-width: 1040px;
+    max-width: 1280px; /* Matched to theme.json wideSize */
     margin-inline: auto;
   }
 
@@ -2090,7 +2090,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 @media (min-width: 1200px) {
   .wp-site-blocks {
-    max-width: 1120px;
+    max-width: 1280px;
   }
 
   .alignwide {
