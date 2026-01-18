@@ -186,8 +186,8 @@ header.wp-block-group {
 
 .dc-header .wp-block-site-logo a,
 .dc-header .wp-block-site-logo img {
-  width: 280px;
-  height: 160px;
+  width: 340px;
+  height: auto;
 }
 
 .dc-header .wp-block-site-logo img {
@@ -1902,8 +1902,8 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .dc-header .dc-logo {
-  width: clamp(180px, 22vw, 280px);
-  max-width: clamp(180px, 22vw, 280px);
+  width: clamp(220px, 30vw, 380px);
+  max-width: clamp(220px, 30vw, 380px);
   margin: 0;
   overflow: visible;
   align-self: flex-start;
@@ -2073,7 +2073,8 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   }
 
   .home .dc-header .wp-block-site-logo img {
-    max-height: 110px;
+    max-height: 180px;
+    width: 380px;
   }
 
   .home .dc-hero .dc-card--feature {
