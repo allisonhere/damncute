@@ -531,20 +531,61 @@ if (!function_exists('damncute_render_pet_card')) {
     {
         $title = get_the_title($post_id);
         $permalink = get_permalink($post_id);
-        // Remove class from img, put it on wrapper
-        $image = get_the_post_thumbnail($post_id, 'medium'); 
-        $meta_html = $meta ? sprintf('<div class="dc-card__meta">%s</div>', esc_html($meta)) : '';
+        $image = get_the_post_thumbnail($post_id, 'medium_large', ['class' => 'dc-card__media-img']); // Updated size
+
+        // Auto-fetch meta if not provided
+        if ($meta === null) {
+            // Vibes
+            $vibes = get_the_terms($post_id, 'vibe');
+            $vibe_html = '';
+            if ($vibes && !is_wp_error($vibes)) {
+                $vibe = $vibes[0];
+                $emoji = get_term_meta($vibe->term_id, 'emoji', true) ?: '';
+                $vibe_label = $emoji ? $emoji . ' ' . $vibe->name : $vibe->name;
+                $vibe_html = sprintf('<span class="dc-card-vibe">%s</span>', esc_html($vibe_label));
+            }
+
+            // Hearts
+            $hearts = (int) get_post_meta($post_id, 'reaction_total', true);
+            $hearts_html = '';
+            if ($hearts > 0) {
+                $hearts_display = ($hearts > 1000) ? round($hearts / 1000, 1) . 'k' : $hearts;
+                $hearts_html = sprintf('<span class="dc-card-hearts">❤️ %s</span>', $hearts_display);
+            }
+
+            if ($vibe_html || $hearts_html) {
+                $meta = sprintf('<div class="dc-card-header">%s %s</div>', $vibe_html, $hearts_html);
+            }
+        }
+
+        // Check if $meta is pre-formatted HTML (contains div class) or just text
+        $meta_output = '';
+        if ($meta) {
+            if (strpos($meta, 'dc-card-header') !== false) {
+                $meta_output = $meta; // Already formatted
+            } else {
+                $meta_output = sprintf('<div class="dc-card__meta">%s</div>', $meta); // Legacy text wrapper
+            }
+        }
 
         return sprintf(
-            '<div class="dc-card dc-card--compact"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3>%s</div></div>',
+            '<div class="dc-card dc-card--compact"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body">%s<h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div>',
             esc_url($permalink),
             $image,
             esc_url($permalink),
-            esc_html($title),
-            $meta_html
+            $meta_output, // Meta goes ABOVE title now
+            esc_url($permalink),
+            esc_html($title)
         );
     }
 }
+
+if (!function_exists('damncute_current_pet_card_shortcode')) {
+    function damncute_current_pet_card_shortcode(): string {
+        return damncute_render_pet_card(get_the_ID());
+    }
+}
+add_shortcode('damncute_current_pet_card', 'damncute_current_pet_card_shortcode');
 
 if (!function_exists('damncute_pet_social_shortcode')) {
     function damncute_pet_social_shortcode(): string
