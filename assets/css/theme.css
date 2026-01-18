@@ -1736,7 +1736,8 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 .dc-filter-bar .dc-chip:hover {
   border-color: var(--dc-button);
   color: var(--dc-ink);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(124, 92, 255, 0.4), 0 0 12px rgba(124, 92, 255, 0.2);
 }
 
 .dc-filter-bar .dc-chip.is-active {
