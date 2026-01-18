@@ -11,15 +11,9 @@
     <h2>Trending Cute</h2>
     <!-- /wp:heading -->
 
-    <!-- wp:query {"query":{"perPage":8,"postType":"pets","order":"desc","orderBy":"date"},"displayLayout":{"type":"flex","columns":4},"className":"dc-query"} -->
-    <div class="wp-block-query dc-query">
-        <!-- wp:post-template {"className":"dc-grid dc-grid--compact"} -->
-            <!-- wp:shortcode -->
-            [damncute_current_pet_card]
-            <!-- /wp:shortcode -->
-        <!-- /wp:post-template -->
-    </div>
-    <!-- /wp:query -->
+    <!-- wp:shortcode -->
+    [damncute_pet_grid count="8" compact="true" pagination="false"]
+    <!-- /wp:shortcode -->
 
     <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"},"style":{"spacing":{"margin":{"top":"var:preset|spacing|m"}}}} -->
     <div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--m)">
