@@ -1709,9 +1709,10 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   display: flex;
   gap: 0.8rem;
   overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
-  padding-bottom: 2px; /* Prevent scrollbar clipping */
+  overflow-y: hidden; /* Explicitly hide vertical scroll */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.5rem 0.2rem 1rem; /* More bottom padding for shadows/hover */
   align-items: center;
 }
 
