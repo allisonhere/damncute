@@ -582,7 +582,87 @@ if (!function_exists('damncute_render_pet_card')) {
 if (!function_exists('damncute_pet_grid_shortcode')) {
     function damncute_pet_grid_shortcode($atts): string
     {
-        return '<p>Grid System Active</p>';
+        $a = shortcode_atts([
+            'count' => 12,
+            'compact' => 'false',
+            'pagination' => 'true',
+        ], $atts);
+
+        $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+        
+        $tax_query = [];
+        if (!empty($_GET['species'])) {
+            $tax_query[] = [
+                'taxonomy' => 'species',
+                'field' => 'slug',
+                'terms' => sanitize_text_field($_GET['species']),
+            ];
+        }
+        if (!empty($_GET['vibe'])) {
+            $tax_query[] = [
+                'taxonomy' => 'vibe',
+                'field' => 'slug',
+                'terms' => sanitize_text_field($_GET['vibe']),
+            ];
+        }
+
+        $args = [
+            'post_type' => 'pets',
+            'post_status' => 'publish',
+            'posts_per_page' => (int) $a['count'],
+            'paged' => $paged,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ];
+
+        if (!empty($tax_query)) {
+            $args['tax_query'] = $tax_query;
+        }
+
+        $query = new WP_Query($args);
+        
+        if (!$query->have_posts()) {
+            return '<p class="dc-no-results">No pets found.</p>';
+        }
+
+        $cards = '';
+        while ($query->have_posts()) {
+            $query->the_post();
+            $cards .= damncute_render_pet_card((int) get_the_ID());
+        }
+        wp_reset_postdata();
+
+        $grid_class = ($a['compact'] === 'true') ? 'dc-grid dc-grid--compact' : 'dc-grid';
+        $output = sprintf('<div class="dc-query"><div class="%s">%s</div>', esc_attr($grid_class), $cards);
+
+        if ($a['pagination'] === 'true') {
+            $output .= '<div class="dc-loader">
+                <div class="dc-skeleton-card"><div class="dc-skeleton-media"></div><div class="dc-skeleton-text"><div class="dc-skeleton-line"></div><div class="dc-skeleton-line dc-skeleton-line--short"></div></div></div>
+                <div class="dc-skeleton-card"><div class="dc-skeleton-media"></div><div class="dc-skeleton-text"><div class="dc-skeleton-line"></div><div class="dc-skeleton-line dc-skeleton-line--short"></div></div></div>
+                <div class="dc-skeleton-card"><div class="dc-skeleton-media"></div><div class="dc-skeleton-text"><div class="dc-skeleton-line"></div><div class="dc-skeleton-line dc-skeleton-line--short"></div></div></div>
+            </div>';
+            
+            $big = 999999999;
+            $pagination = paginate_links([
+                'base' => str_replace((string) $big, '%#%', esc_url(get_pagenum_link($big))),
+                'format' => '?paged=%#%',
+                'current' => max(1, $paged),
+                'total' => $query->max_num_pages,
+                'type' => 'array',
+            ]);
+
+            if ($pagination) {
+                $output .= '<div class="dc-pagination" style="display:none;">';
+                foreach ($pagination as $link) {
+                    $output .= $link;
+                }
+                $output .= '</div>';
+            }
+        }
+
+        $output .= '</div>';
+
+        return $output;
     }
 }
 add_shortcode('damncute_pet_grid', 'damncute_pet_grid_shortcode');
@@ -2427,43 +2507,7 @@ if (!function_exists('damncute_get_page_html')) {
         if ($query->have_posts()) {
             while ($query->have_posts()) {
                 $query->the_post();
-                $post_id = get_the_ID();
-                $permalink = get_permalink();
-                $title = get_the_title();
-                // Remove the class from the image itself, let the wrapper handle it
-                $image = get_the_post_thumbnail($post_id, 'large');
-                
-                // Get Vibe
-                $vibes = get_the_terms($post_id, 'vibe');
-                $vibe_html = '';
-                if ($vibes && !is_wp_error($vibes)) {
-                    $vibe = $vibes[0]; // Just show primary vibe
-                    $emoji = get_term_meta($vibe->term_id, 'emoji', true) ?: '';
-                    $vibe_label = $emoji ? $emoji . ' ' . $vibe->name : $vibe->name;
-                    $vibe_html = sprintf('<span class="dc-card-vibe">%s</span>', esc_html($vibe_label));
-                }
-
-                // Get Reactions
-                $hearts = (int) get_post_meta($post_id, 'reaction_total', true);
-                if ($hearts > 0) {
-                     // Format K/M
-                    if ($hearts > 1000) $hearts_display = round($hearts / 1000, 1) . 'k';
-                    else $hearts_display = $hearts;
-                    $hearts_html = sprintf('<span class="dc-card-hearts">❤️ %s</span>', $hearts_display);
-                } else {
-                    $hearts_html = '';
-                }
-
-                // Wrap in li.wp-block-post to match the initial render structure
-                $html .= sprintf(
-                    '<li class="wp-block-post"><div class="dc-card dc-card--anim"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><div class="dc-card-header">%s %s</div><h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div></li>',
-                    esc_url($permalink),
-                    $image,
-                    $vibe_html,
-                    $hearts_html,
-                    esc_url($permalink),
-                    esc_html($title)
-                );
+                $html .= damncute_render_pet_card((int) get_the_ID());
             }
             wp_reset_postdata();
         }
@@ -2532,69 +2576,3 @@ if (!function_exists('damncute_hearts_only_shortcode')) {
     }
 }
 add_shortcode('damncute_hearts_only', 'damncute_hearts_only_shortcode');
-
-if (!function_exists('damncute_pet_of_day_shortcode')) {
-    function damncute_pet_of_day_shortcode(): string
-    {
-        $transient_key = 'damncute_pet_of_day_v2';
-        $selected_id = absint(get_option('damncute_pet_of_day_id', 0));
-        $post_id = $selected_id && get_post_status($selected_id) === 'publish'
-            ? $selected_id
-            : get_transient($transient_key);
-
-        if (false === $post_id) {
-            $query = new WP_Query([
-                'post_type' => 'pets',
-                'posts_per_page' => 1,
-                'post_status' => 'publish',
-                'meta_key' => 'reaction_total',
-                'orderby' => 'meta_value_num',
-                'order' => 'DESC',
-                'date_query' => [
-                    [
-                        'after' => '1 week ago',
-                    ],
-                ],
-            ]);
-
-            if ($query->have_posts()) {
-                $post_id = $query->posts[0]->ID;
-                set_transient($transient_key, $post_id, HOUR_IN_SECONDS * 12);
-            } else {
-                // Fallback to random if no votes yet
-                $fallback = get_posts(['post_type' => 'pets', 'numberposts' => 1, 'orderby' => 'rand']);
-                $post_id = !empty($fallback) ? $fallback[0]->ID : 0;
-            }
-        }
-
-        if (!$post_id) {
-            return '';
-        }
-
-        // Render Card with "Hero" modifier
-        $title = get_the_title($post_id);
-        $permalink = get_permalink($post_id);
-        $image = get_the_post_thumbnail($post_id, 'large', ['class' => 'dc-card__media']);
-        $excerpt = get_the_excerpt($post_id);
-        
-        // Manual HTML construction to match the "Feature Card" look
-        $html = sprintf(
-            '<div class="dc-card dc-card--feature">
-                <div class="dc-card__media"><a href="%s">%s</a></div>
-                <div class="dc-card__body">
-                    <div class="dc-card__meta" style="color:var(--dc-accent); margin-bottom:0.5rem; font-weight:700;">PET OF THE DAY</div>
-                    <h3 class="dc-card__title" style="font-size:2rem;"><a href="%s">%s</a></h3>
-                    <div class="dc-card__excerpt">%s</div>
-                </div>
-            </div>',
-            esc_url($permalink),
-            $image,
-            esc_url($permalink),
-            esc_html($title),
-            esc_html($excerpt)
-        );
-
-        return $html;
-    }
-}
-add_shortcode('damncute_pet_of_day', 'damncute_pet_of_day_shortcode');
