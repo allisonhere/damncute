@@ -11,9 +11,7 @@
     <h2>Trending Cute</h2>
     <!-- /wp:heading -->
 
-    <!-- wp:shortcode -->
-    [damncute_pet_grid count="8" compact="true" pagination="false"]
-    <!-- /wp:shortcode -->
+    <?php echo do_shortcode('[damncute_pet_grid count="8" compact="true" pagination="false"]'); ?>
 
     <!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"},"style":{"spacing":{"margin":{"top":"var:preset|spacing|m"}}}} -->
     <div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--m)">

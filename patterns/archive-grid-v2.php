@@ -6,6 +6,4 @@
  * Inserter: false
  */
 ?>
-<!-- wp:shortcode -->
-[damncute_pet_grid]
-<!-- /wp:shortcode -->
+<?php echo do_shortcode('[damncute_pet_grid]'); ?>
