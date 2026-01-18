@@ -524,9 +524,40 @@
 
     const chips = bar.querySelectorAll('.dc-chip');
     const query = document.querySelector('.dc-query');
+    // Support both block theme templates and classic divs
     const grid = query?.querySelector('.dc-grid') || query?.querySelector('.wp-block-post-template');
     
     if (!grid) return;
+
+    // Helper to fetch and render
+    const loadVibe = async (species, vibe) => {
+        // Add loading state
+        grid.style.opacity = '0.5';
+        grid.style.transition = 'opacity 0.2s';
+        
+        try {
+            // Fetch page 1 with new filters
+            const apiUrl = `${window.damncuteData.restUrl}/page/1?species=${species}&vibe=${vibe}`;
+            const res = await fetch(apiUrl);
+            const data = await res.json();
+            
+            if (data.html) {
+                // Clear and replace
+                grid.innerHTML = data.html;
+                
+                // Re-init any interactions on new items (like reactions/share)
+                // Note: We might need to expose initReactions/initShare globally or rerun them
+                // For now, simpler is better.
+                initReactions(); // Re-run to bind events to new elements
+            } else {
+                grid.innerHTML = '<p class="dc-no-results">No pets found for this vibe yet!</p>';
+            }
+        } catch (err) {
+            console.error('Filter fetch failed', err);
+        } finally {
+            grid.style.opacity = '1';
+        }
+    };
 
     const handleFilter = (e) => {
       const btn = e.currentTarget;
@@ -537,52 +568,27 @@
 
       // Update State
       const term = btn.dataset.filterTerm || '';
-      const tax = btn.dataset.filterTax || '';
+      const tax = btn.dataset.filterTax || 'vibe';
       const url = new URL(window.location);
       
-      url.searchParams.delete('species');
+      // We currently only filter by vibe in this bar, but support expansion
       url.searchParams.delete('vibe');
-      
-      if (term) {
-        url.searchParams.set(tax, term);
+      if (term && tax === 'vibe') {
+        url.searchParams.set('vibe', term);
       }
       
+      // Preserve species if it exists in URL (e.g. from a different filter)
+      const currentSpecies = url.searchParams.get('species') || '';
+      
       window.history.pushState({}, '', url);
-
-      // Reset Grid
-      grid.innerHTML = ''; // Clear items
       
-      // Re-trigger infinite scroll
-      // We do this by scrolling to top (optional) or just letting the observer fire
-      // But since the grid is empty, the loader will be visible immediately.
-      
-      // Force reload by removing and re-adding infinite scroll logic?
-      // Better: Reload page? No, that's not "App-like".
-      // Best: Manually trigger the fetch logic or expose a reset method.
-      // For simplicity in this architecture, we will simply reload the page for now
-      // as it guarantees 100% compatibility with the complex WP Query state.
-      // OR, we can just call window.location.reload() which is fast enough for v1.
-      
-      // Actually, let's do it properly:
-      // We will rely on initInfiniteScroll to handle the "empty grid" state? 
-      // initInfiniteScroll runs once. We need to reset its internal state.
-      
-      // Quickest win for V1 without refactoring the whole scroller:
-      window.location.reload(); 
+      // AJAX Load
+      loadVibe(currentSpecies, term);
     };
 
     chips.forEach(chip => {
       chip.addEventListener('click', handleFilter);
     });
-    
-    // Set active state from URL
-    const params = new URLSearchParams(window.location.search);
-    const activeTerm = params.get('species') || params.get('vibe');
-    if (activeTerm) {
-        chips.forEach(c => c.classList.remove('is-active'));
-        const match = bar.querySelector(`[data-filter-term="${activeTerm}"]`);
-        if (match) match.classList.add('is-active');
-    }
   };
 
   const initFilterGroups = () => {

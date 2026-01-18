@@ -382,59 +382,56 @@ if (!function_exists('damncute_register_pattern_category')) {
 }
 add_action('init', 'damncute_register_pattern_category');
 
-if (!function_exists('damncute_term_filters_shortcode')) {
-    function damncute_term_filters_shortcode(): string
+if (!function_exists('damncute_vibe_check_shortcode')) {
+    function damncute_vibe_check_shortcode(): string
     {
-        $taxonomies = [
-            'species' => __('Species', 'damncute'),
-            'vibe' => __('Vibe', 'damncute'),
-        ];
-        $limit = (int) apply_filters('damncute_term_filter_limit', 8);
+        $terms = get_terms([
+            'taxonomy' => 'vibe',
+            'hide_empty' => true,
+            'orderby' => 'count',
+            'order' => 'DESC',
+            'number' => 12,
+        ]);
 
-        $html = '<div class="dc-filters">';
-        foreach ($taxonomies as $taxonomy => $label) {
-            $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
-            if (empty($terms) || is_wp_error($terms)) {
-                continue;
-            }
-            $current_slug = '';
-            if (is_tax($taxonomy)) {
-                $queried = get_queried_object();
-                if ($queried && isset($queried->slug)) {
-                    $current_slug = (string) $queried->slug;
-                }
-            }
-
-            $html .= sprintf(
-                '<div class="dc-filters__group" data-filter-group data-limit="%d">',
-                $limit
-            );
-            $html .= sprintf('<span class="dc-filters__label">%s</span>', esc_html($label));
-            foreach ($terms as $term) {
-                $active_class = $current_slug !== '' && $term->slug === $current_slug ? ' is-active' : '';
-                $html .= sprintf(
-                    '<a class="dc-chip%s" href="%s">%s</a>',
-                    esc_attr($active_class),
-                    esc_url(get_term_link($term)),
-                    esc_html($term->name)
-                );
-            }
-            if (count($terms) > $limit) {
-                $html .= sprintf(
-                    '<button class="dc-chip dc-chip--toggle" type="button" data-filter-toggle data-label-more="%s" data-label-less="%s">%s</button>',
-                    esc_attr__('More', 'damncute'),
-                    esc_attr__('Less', 'damncute'),
-                    esc_html__('More', 'damncute')
-                );
-            }
-            $html .= '</div>';
+        if (empty($terms) || is_wp_error($terms)) {
+            return '';
         }
-        $html .= '</div>';
+
+        // Get current vibe from URL if exists
+        $current_vibe = isset($_GET['vibe']) ? sanitize_key($_GET['vibe']) : '';
+
+        $html = '<div class="dc-filter-bar-wrapper">';
+        $html .= '<div class="dc-filter-bar">';
+        
+        // "All" chip
+        $active_all = empty($current_vibe) ? ' is-active' : '';
+        $html .= sprintf(
+            '<button class="dc-chip%s" data-filter-term="" data-filter-tax="vibe">%s</button>',
+            $active_all,
+            __('All Vibes', 'damncute')
+        );
+
+        $html .= '<div class="dc-filter-sep"></div>';
+
+        foreach ($terms as $term) {
+            $is_active = $current_vibe === $term->slug ? ' is-active' : '';
+            $emoji = get_term_meta($term->term_id, 'emoji', true) ?: ''; 
+            $label = $emoji ? $emoji . ' ' . $term->name : $term->name;
+            
+            $html .= sprintf(
+                '<button class="dc-chip%s" data-filter-term="%s" data-filter-tax="vibe">%s</button>',
+                $is_active,
+                esc_attr($term->slug),
+                esc_html($label)
+            );
+        }
+
+        $html .= '</div></div>';
 
         return $html;
     }
 }
-add_shortcode('damncute_term_filters', 'damncute_term_filters_shortcode');
+add_shortcode('damncute_vibe_check', 'damncute_vibe_check_shortcode');
 
 if (!function_exists('damncute_pet_meta_shortcode')) {
     function damncute_pet_meta_shortcode(): string
