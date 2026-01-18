@@ -25,10 +25,13 @@
             
             <!-- wp:group {"className":"dc-card__body","style":{"spacing":{"blockGap":"0"}}} -->
             <div class="wp-block-group dc-card__body">
-                <div class="dc-card-header">
-                    <!-- wp:post-terms {"taxonomy":"vibe","className":"dc-card-vibe"} /-->
-                    <!-- wp:post-meta {"key":"reaction_total","className":"dc-card-hearts"} /-->
-                </div>
+                <!-- wp:paragraph {"style":{"typography":{"fontSize":"10px"},"color":"var:preset|color|accent"}} -->
+                <p style="font-size:10px;color:var(--wp--preset--color--accent)">Meta Check</p>
+                <!-- /wp:paragraph -->
+                
+                <!-- wp:post-terms {"taxonomy":"vibe","className":"dc-card-vibe"} /-->
+                <!-- wp:post-meta {"key":"reaction_total","className":"dc-card-hearts"} /-->
+                
                 <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
             </div>
             <!-- /wp:group -->
