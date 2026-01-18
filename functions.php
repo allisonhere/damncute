@@ -2293,11 +2293,12 @@ if (!function_exists('damncute_get_page_html')) {
                 $post_id = get_the_ID();
                 $permalink = get_permalink();
                 $title = get_the_title();
-                $image = get_the_post_thumbnail($post_id, 'large', ['class' => 'dc-card__media']);
+                // Remove the class from the image itself, let the wrapper handle it
+                $image = get_the_post_thumbnail($post_id, 'large');
                 
-                // Replicate the standard card markup
+                // Wrap in li.wp-block-post to match the initial render structure
                 $html .= sprintf(
-                    '<div class="dc-card dc-card--anim"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div>',
+                    '<li class="wp-block-post"><div class="dc-card dc-card--anim"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div></li>',
                     esc_url($permalink),
                     $image,
                     esc_url($permalink),
