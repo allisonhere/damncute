@@ -2106,8 +2106,4 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   .home .dc-hero--news {
     grid-template-columns: minmax(360px, 1.2fr) minmax(320px, 0.8fr);
   }
-
-  .home .dc-section--trending {
-    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  }
 }
