@@ -577,12 +577,12 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 /* Cards are the primary visual unit across the product. */
 .dc-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: clamp(1rem, 0.7rem + 0.8vw, 1.8rem);
 }
 
 .dc-grid--compact {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 }
 
 .dc-card {
@@ -2100,11 +2100,11 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   }
 
   .dc-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 
   .dc-grid--compact {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 
   .dc-card__body {
