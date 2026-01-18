@@ -710,6 +710,12 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   display: flex;
   align-items: center;
   gap: 0.3rem;
+  font-weight: 600;
+}
+
+.dc-card-hearts::before {
+  content: "❤️";
+  font-size: 0.9em;
 }
 
 .dc-card__title {

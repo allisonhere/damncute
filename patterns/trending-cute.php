@@ -22,7 +22,7 @@
             <div class="wp-block-group dc-card__body">
                 <div class="dc-card-header">
                     <!-- wp:post-terms {"taxonomy":"vibe","className":"dc-card-vibe"} /-->
-                    <!-- wp:pattern {"slug":"damncute/meta-heart"} /-->
+                    <!-- wp:post-meta {"key":"reaction_total","className":"dc-card-hearts"} /-->
                 </div>
                 <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
             </div>
