@@ -1864,7 +1864,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* transform: none; Left unset to allow hover overrides */
   }
 }
 
