@@ -452,6 +452,8 @@
     window.addEventListener('scroll', handleScroll, { passive: true });
   };
 
+  let scrollController = null;
+
   const initInfiniteScroll = () => {
     const query = document.querySelector('.dc-query');
     const loader = document.querySelector('.dc-loader');
@@ -470,16 +472,16 @@
     let loading = false;
     let finished = false;
 
-    // Get filter params from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const species = urlParams.get('species') || '';
-    const vibe = urlParams.get('vibe') || '';
-
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !loading && !finished) {
         loading = true;
         loader.classList.add('is-visible');
         page++;
+
+        // Get fresh filter params from URL on every fetch
+        const urlParams = new URLSearchParams(window.location.search);
+        const species = urlParams.get('species') || '';
+        const vibe = urlParams.get('vibe') || '';
 
         const apiUrl = `${window.damncuteData.restUrl}/page/${page}?species=${species}&vibe=${vibe}`;
 
@@ -497,13 +499,12 @@
                   img.onload = () => { img.style.opacity = '1'; };
               });
 
-              // Find the grid container (first div inside post-template usually)
-              // But WP Query block structure is tricky. We look for the parent of existing cards.
               const grid = query.querySelector('.dc-grid') || query.querySelector('.wp-block-post-template');
               if (grid) {
                 while (temp.firstChild) {
                   grid.appendChild(temp.firstChild);
                 }
+                initReactions(); // Re-bind new items
               }
             }
 
@@ -513,16 +514,27 @@
             }
           })
           .catch(() => {
-            finished = true; // Stop trying on error
+            finished = true;
           })
           .finally(() => {
             loading = false;
             loader.classList.remove('is-visible');
           });
       }
-    }, { rootMargin: '200px' });
+    }, { rootMargin: '400px' });
 
     observer.observe(loader);
+
+    // Return reset function
+    return {
+        reset: () => {
+            page = 1;
+            finished = false;
+            loading = false;
+            loader.style.display = 'flex';
+            loader.classList.remove('is-visible');
+        }
+    };
   };
 
   const initFilterBar = () => {
@@ -556,6 +568,7 @@
                 // Note: We might need to expose initReactions/initShare globally or rerun them
                 // For now, simpler is better.
                 initReactions(); // Re-run to bind events to new elements
+                if (scrollController) scrollController.reset();
             } else {
                 grid.innerHTML = '<p class="dc-no-results">No pets found for this vibe yet!</p>';
             }
@@ -566,31 +579,36 @@
         }
     };
 
-    const handleFilter = (e) => {
+    const handleFilter = async (e) => {
       const btn = e.currentTarget;
-      
+      if (btn.classList.contains('is-active')) return;
+
       // Update UI
       chips.forEach(c => c.classList.remove('is-active'));
       btn.classList.add('is-active');
 
-      // Update State
+      // Update URL state
       const term = btn.dataset.filterTerm || '';
       const tax = btn.dataset.filterTax || 'vibe';
       const url = new URL(window.location);
       
-      // We currently only filter by vibe in this bar, but support expansion
       url.searchParams.delete('vibe');
-      if (term && tax === 'vibe') {
-        url.searchParams.set('vibe', term);
-      }
+      if (term) url.searchParams.set('vibe', term);
       
-      // Preserve species if it exists in URL (e.g. from a different filter)
       const currentSpecies = url.searchParams.get('species') || '';
-      
       window.history.pushState({}, '', url);
       
-      // AJAX Load
-      loadVibe(currentSpecies, term);
+      // Smoothly load new content
+      await loadVibe(currentSpecies, term);
+      
+      // Scroll back to top of feed if we've scrolled down
+      const barRect = bar.getBoundingClientRect();
+      if (barRect.top < 0) {
+          window.scrollTo({
+              top: window.scrollY + barRect.top - 100,
+              behavior: 'smooth'
+          });
+      }
     };
 
     chips.forEach(chip => {
@@ -822,7 +840,7 @@
     initShare();
     initNav();
     initFloatingCta();
-    initInfiniteScroll();
+    scrollController = initInfiniteScroll();
     initFilterBar();
     initFilterGroups();
     initFeedStateLinks();
