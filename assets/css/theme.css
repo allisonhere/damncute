@@ -686,6 +686,32 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   display: block;
 }
 
+.dc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dc-card-vibe {
+  background: rgba(124, 92, 255, 0.15);
+  color: #a07cff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.dc-card-hearts {
+  color: var(--dc-mute);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .dc-card__title {
   font-size: clamp(0.95rem, 0.85rem + 0.4vw, 1.2rem);
   margin: 0 0 0.5rem;

@@ -20,6 +20,9 @@
             
             <!-- wp:group {"className":"dc-card__body","style":{"spacing":{"blockGap":"0"}}} -->
             <div class="wp-block-group dc-card__body">
+                <!-- wp:shortcode -->
+                [damncute_card_meta]
+                <!-- /wp:shortcode -->
                 <!-- wp:post-title {"isLink":true,"className":"dc-card__title"} /-->
             </div>
             <!-- /wp:group -->

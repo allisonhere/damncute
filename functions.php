@@ -2296,11 +2296,34 @@ if (!function_exists('damncute_get_page_html')) {
                 // Remove the class from the image itself, let the wrapper handle it
                 $image = get_the_post_thumbnail($post_id, 'large');
                 
+                // Get Vibe
+                $vibes = get_the_terms($post_id, 'vibe');
+                $vibe_html = '';
+                if ($vibes && !is_wp_error($vibes)) {
+                    $vibe = $vibes[0]; // Just show primary vibe
+                    $emoji = get_term_meta($vibe->term_id, 'emoji', true) ?: '';
+                    $vibe_label = $emoji ? $emoji . ' ' . $vibe->name : $vibe->name;
+                    $vibe_html = sprintf('<span class="dc-card-vibe">%s</span>', esc_html($vibe_label));
+                }
+
+                // Get Reactions
+                $hearts = (int) get_post_meta($post_id, 'reaction_total', true);
+                if ($hearts > 0) {
+                     // Format K/M
+                    if ($hearts > 1000) $hearts_display = round($hearts / 1000, 1) . 'k';
+                    else $hearts_display = $hearts;
+                    $hearts_html = sprintf('<span class="dc-card-hearts">❤️ %s</span>', $hearts_display);
+                } else {
+                    $hearts_html = '';
+                }
+
                 // Wrap in li.wp-block-post to match the initial render structure
                 $html .= sprintf(
-                    '<li class="wp-block-post"><div class="dc-card dc-card--anim"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div></li>',
+                    '<li class="wp-block-post"><div class="dc-card dc-card--anim"><div class="dc-card__media"><a href="%s">%s</a></div><div class="dc-card__body"><div class="dc-card-header">%s %s</div><h3 class="dc-card__title"><a href="%s">%s</a></h3></div></div></li>',
                     esc_url($permalink),
                     $image,
+                    $vibe_html,
+                    $hearts_html,
                     esc_url($permalink),
                     esc_html($title)
                 );
@@ -2314,6 +2337,35 @@ if (!function_exists('damncute_get_page_html')) {
         ]);
     }
 }
+
+if (!function_exists('damncute_card_meta_shortcode')) {
+    function damncute_card_meta_shortcode(): string {
+        $post_id = get_the_ID();
+        
+        // Get Vibe
+        $vibes = get_the_terms($post_id, 'vibe');
+        $vibe_html = '';
+        if ($vibes && !is_wp_error($vibes)) {
+            $vibe = $vibes[0];
+            $emoji = get_term_meta($vibe->term_id, 'emoji', true) ?: '';
+            $vibe_label = $emoji ? $emoji . ' ' . $vibe->name : $vibe->name;
+            $vibe_html = sprintf('<span class="dc-card-vibe">%s</span>', esc_html($vibe_label));
+        }
+
+        // Get Reactions
+        $hearts = (int) get_post_meta($post_id, 'reaction_total', true);
+        if ($hearts > 0) {
+            if ($hearts > 1000) $hearts_display = round($hearts / 1000, 1) . 'k';
+            else $hearts_display = $hearts;
+            $hearts_html = sprintf('<span class="dc-card-hearts">❤️ %s</span>', $hearts_display);
+        } else {
+            $hearts_html = '';
+        }
+
+        return sprintf('<div class="dc-card-header">%s %s</div>', $vibe_html, $hearts_html);
+    }
+}
+add_shortcode('damncute_card_meta', 'damncute_card_meta_shortcode');
 
 if (!function_exists('damncute_pet_of_day_shortcode')) {
     function damncute_pet_of_day_shortcode(): string
