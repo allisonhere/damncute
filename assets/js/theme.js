@@ -835,6 +835,60 @@
     window.setTimeout(step, 250);
   };
 
+  const initRelatedLoadMore = () => {
+    const btn = document.querySelector('.dc-load-more-related');
+    const grid = document.querySelector('#dc-related-grid');
+    if (!btn || !grid) return;
+
+    const postId = grid.dataset.postId;
+
+    btn.addEventListener('click', async () => {
+      const originalText = btn.textContent;
+      btn.textContent = 'Loading...';
+      btn.disabled = true;
+
+      const page = parseInt(btn.dataset.page, 10);
+      const apiUrl = `${window.damncuteData.restUrl}/related/${postId}?page=${page}`;
+
+      try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (data.html) {
+          const temp = document.createElement('div');
+          temp.innerHTML = data.html;
+          
+          // Image fade-in
+          temp.querySelectorAll('img').forEach(img => {
+              img.style.opacity = '0';
+              img.style.transition = 'opacity 0.6s ease';
+              img.onload = () => { img.style.opacity = '1'; };
+          });
+
+          while (temp.firstChild) {
+            grid.appendChild(temp.firstChild);
+          }
+          
+          // Re-bind interactions
+          initReactions(); 
+          
+          btn.dataset.page = page + 1;
+          btn.textContent = originalText;
+          btn.disabled = false;
+
+          if (!data.has_next) {
+            btn.style.display = 'none';
+          }
+        } else {
+          btn.style.display = 'none';
+        }
+      } catch (err) {
+        console.error(err);
+        btn.textContent = 'Error';
+      }
+    });
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     initReactions();
     initShare();
@@ -846,5 +900,6 @@
     initFeedStateLinks();
     initFeedReturnLink();
     restoreFeedScroll();
+    initRelatedLoadMore();
   });
 })();

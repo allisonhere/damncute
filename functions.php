@@ -840,9 +840,17 @@ if (!function_exists('damncute_pet_related_shortcode')) {
                     $cards .= damncute_render_pet_card($post->ID);
                 }
                 $sections .= sprintf(
-                    '<section class="dc-related"><h2 class="dc-related__title">%s</h2><div class="dc-grid dc-grid--compact">%s</div></section>',
-                    esc_html__('Related by vibe or species', 'damncute'),
-                    $cards
+                    '<section class="dc-related" id="dc-related-section">
+                        <h2 class="dc-related__title">%s</h2>
+                        <div class="dc-grid dc-grid--compact" id="dc-related-grid" data-post-id="%d">%s</div>
+                        <div class="dc-load-more-wrapper" style="text-align:center; margin-top:2rem;">
+                            <button class="wp-element-button dc-load-more-related" data-page="1">🔄 %s</button>
+                        </div>
+                    </section>',
+                    esc_html__('More pets to adore', 'damncute'),
+                    $post_id,
+                    $cards,
+                    esc_html__('Load More Cuteness', 'damncute')
                 );
             }
         }
@@ -851,6 +859,62 @@ if (!function_exists('damncute_pet_related_shortcode')) {
     }
 }
 add_shortcode('damncute_pet_related', 'damncute_pet_related_shortcode');
+
+if (!function_exists('damncute_register_related_endpoint')) {
+    function damncute_register_related_endpoint(): void {
+        register_rest_route('damncute/v1', '/related/(?P<id>\d+)', [
+            'methods' => 'GET',
+            'callback' => 'damncute_get_related_html',
+            'permission_callback' => '__return_true',
+        ]);
+    }
+}
+add_action('rest_api_init', 'damncute_register_related_endpoint');
+
+if (!function_exists('damncute_get_related_html')) {
+    function damncute_get_related_html(WP_REST_Request $request) {
+        $post_id = absint($request['id']);
+        $page = absint($request->get_param('page')) ?: 1;
+        
+        $tax_query = [];
+        $species_ids = wp_get_post_terms($post_id, 'species', ['fields' => 'ids']);
+        $vibe_ids = wp_get_post_terms($post_id, 'vibe', ['fields' => 'ids']);
+        
+        if (!empty($species_ids)) {
+            $tax_query[] = ['taxonomy' => 'species', 'field' => 'term_id', 'terms' => $species_ids];
+        }
+        if (!empty($vibe_ids)) {
+            $tax_query[] = ['taxonomy' => 'vibe', 'field' => 'term_id', 'terms' => $vibe_ids];
+        }
+
+        if (empty($tax_query)) {
+            return rest_ensure_response(['html' => '', 'has_next' => false]);
+        }
+
+        $query = new WP_Query([
+            'post_type' => 'pets',
+            'post_status' => 'publish',
+            'posts_per_page' => 8, // Load 8 at a time
+            'paged' => $page + 1, // Next page
+            'post__not_in' => [$post_id],
+            'tax_query' => array_merge(['relation' => 'OR'], $tax_query),
+        ]);
+
+        $html = '';
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $html .= damncute_render_pet_card(get_the_ID());
+            }
+            wp_reset_postdata();
+        }
+
+        return rest_ensure_response([
+            'html' => $html,
+            'has_next' => $page + 1 < $query->max_num_pages,
+        ]);
+    }
+}
 
 if (!function_exists('damncute_pet_sections_shortcode')) {
     function damncute_pet_sections_shortcode(): string
