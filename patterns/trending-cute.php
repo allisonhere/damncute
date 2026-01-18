@@ -1,7 +1,7 @@
 <?php
 /**
  * Title: Trending Cute
- * Slug: damncute/trending-cute
+ * Slug: damncute/trending-cute-v2
  * Categories: damncute
  */
 ?>
