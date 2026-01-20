@@ -469,6 +469,41 @@ if (!function_exists('damncute_pet_meta_shortcode')) {
 }
 add_shortcode('damncute_pet_meta', 'damncute_pet_meta_shortcode');
 
+if (!function_exists('damncute_get_meta_item')) {
+    function damncute_get_meta_item(int $post_id, string $key, string $label): string {
+        $value = get_post_meta($post_id, $key, true);
+        if ($value === '') {
+            return '';
+        }
+        return sprintf(
+            '<div class="dc-meta__item"><span class="dc-meta__label">%s</span><span class="dc-meta__value">%s</span></div>',
+            esc_html($label),
+            esc_html($value)
+        );
+    }
+}
+
+if (!function_exists('damncute_age_shortcode')) {
+    function damncute_age_shortcode(): string {
+        return damncute_get_meta_item(get_the_ID(), 'age', __('Age', 'damncute'));
+    }
+}
+add_shortcode('damncute_age', 'damncute_age_shortcode');
+
+if (!function_exists('damncute_owner_shortcode')) {
+    function damncute_owner_shortcode(): string {
+         return damncute_get_meta_item(get_the_ID(), 'owner_social', __('Owner', 'damncute'));
+    }
+}
+add_shortcode('damncute_owner', 'damncute_owner_shortcode');
+
+if (!function_exists('damncute_adoption_shortcode')) {
+    function damncute_adoption_shortcode(): string {
+         return damncute_get_meta_item(get_the_ID(), 'adoption_status', __('Adoption', 'damncute'));
+    }
+}
+add_shortcode('damncute_adoption', 'damncute_adoption_shortcode');
+
 if (!function_exists('damncute_reaction_map')) {
     function damncute_reaction_map(): array
     {
