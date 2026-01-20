@@ -890,6 +890,10 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   overflow-wrap: break-word;
 }
 
+.dc-meta__value * {
+  margin: 0;
+}
+
 .dc-meta__value a {
   display: inline;
   line-height: inherit;
