@@ -125,8 +125,8 @@ p:empty {
 }
 
 .single-pets .dc-hero-media {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 .post-type-archive-pets .dc-section {
@@ -841,13 +841,13 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .single-pets .dc-meta {
-  margin-top: 0.4rem !important;
+  margin-top: 0.2rem !important;
 }
 
 .single-pets .dc-meta {
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 0.6rem;
-  margin: 0.4rem 0 1rem !important;
+  margin: 0.2rem 0 1rem !important;
 }
 
 .dc-meta__item {
