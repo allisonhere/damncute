@@ -859,12 +859,13 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   background: var(--dc-card);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   height: 100%;
 }
 
 .single-pets .dc-meta__item {
   padding: 0.6rem 0.75rem;
+  min-height: 100%; /* Ensure it fills the grid cell */
 }
 
 .dc-meta__label {
@@ -873,6 +874,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   letter-spacing: 0.08em;
   color: var(--dc-mute);
   display: block;
+  margin-bottom: 0.2rem;
 }
 
 .single-pets .dc-meta__label {
@@ -884,6 +886,8 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   font-weight: 600;
   line-height: 1.2;
   display: block;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .dc-meta__value a {
