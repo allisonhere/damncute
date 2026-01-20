@@ -730,12 +730,17 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   flex-wrap: nowrap;
   gap: 0.6rem;
   margin-top: 0.5rem;
-  padding-bottom: 0.4rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
   text-transform: none;
   letter-spacing: 0;
+}
+
+.single-pets .dc-meta-row {
+  margin-bottom: 0.2rem !important;
 }
 
 .dc-meta-row::-webkit-scrollbar {
@@ -834,11 +839,25 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   margin: 1.5rem 0;
 }
 
+.single-pets .dc-meta {
+  margin-top: 0.8rem !important;
+}
+
+.single-pets .dc-meta {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+  margin: 0.8rem 0 1rem !important;
+}
+
 .dc-meta__item {
   border: 1px solid var(--dc-border);
   border-radius: var(--dc-radius-sm);
   padding: 0.8rem;
   background: var(--dc-card);
+}
+
+.single-pets .dc-meta__item {
+  padding: 0.6rem 0.75rem;
 }
 
 .dc-meta__label {
@@ -849,8 +868,17 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   display: block;
 }
 
+.single-pets .dc-meta__label {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+}
+
 .dc-meta__value {
   font-weight: 600;
+}
+
+.single-pets .dc-meta__value {
+  font-size: 0.95rem;
 }
 
 .dc-pet-section {
@@ -1776,17 +1804,42 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   position: sticky;
   top: 1rem; /* Float down a bit from the top */
   z-index: 100;
-  margin-bottom: 3rem;
+  margin-bottom: -2rem;
   display: flex;
   justify-content: center;
   pointer-events: none; /* Let clicks pass through the wrapper */
 }
 
+.post-type-archive-pets .dc-filter-bar-wrapper {
+  margin-top: -1.5rem !important;
+}
+
+.post-type-archive-pets .dc-filter-bar {
+  padding: 0.25rem 1.2rem;
+  scroll-padding-inline: 1.2rem;
+}
+
 .post-type-archive-pets .wp-site-blocks > .wp-block-shortcode,
 .tax-species .wp-site-blocks > .wp-block-shortcode,
 .tax-vibe .wp-site-blocks > .wp-block-shortcode {
-  margin-top: calc(-1 * var(--dc-site-gap));
+  margin-top: calc(-0.6 * var(--dc-site-gap));
   margin-bottom: 0;
+}
+
+.post-type-archive-pets .wp-block-shortcode {
+  margin-top: calc(-0.6 * var(--dc-site-gap)) !important;
+}
+
+.post-type-archive-pets .wp-block-query-title {
+  margin-bottom: 0.4rem !important;
+}
+
+.post-type-archive-pets .dc-hero__lede {
+  margin-bottom: 0.6rem !important;
+}
+
+.post-type-archive-pets .dc-section > .wp-block-group:first-child {
+  margin-bottom: 1.5rem !important;
 }
 
 .dc-filter-bar {

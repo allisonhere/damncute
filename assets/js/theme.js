@@ -740,8 +740,16 @@
       return;
     }
 
+    const wrappers = document.querySelectorAll('.dc-back-to-feed');
+    if (!wrappers.length) {
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('from') !== 'feed') {
+      wrappers.forEach((wrapper) => {
+        wrapper.style.display = 'none';
+      });
       return;
     }
 
@@ -769,29 +777,13 @@
       }
     });
 
-    const container = document.querySelector('.dc-section') || document.querySelector('main') || document.body;
-    if (!container) {
-      return;
-    }
-
-    const buildLink = () => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'dc-back-to-feed';
-      const link = document.createElement('a');
-      link.href = backUrl.toString();
-      link.textContent = 'Back to feed';
-      wrapper.appendChild(link);
-      return wrapper;
-    };
-
-    const title = container.querySelector('.dc-pet-title');
-    if (title && title.parentNode) {
-      title.parentNode.insertBefore(buildLink(), title.nextSibling);
-    } else {
-      container.insertBefore(buildLink(), container.firstChild);
-    }
-
-    container.appendChild(buildLink());
+    wrappers.forEach((wrapper) => {
+      const link = wrapper.querySelector('a');
+      if (link) {
+        link.href = backUrl.toString();
+        link.textContent = 'Back to feed';
+      }
+    });
   };
 
   const restoreFeedScroll = () => {
