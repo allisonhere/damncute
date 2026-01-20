@@ -1089,11 +1089,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
     inset 0 0 0 1px rgba(107, 215, 255, 0.2);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dc-share-row [data-share-platform="instagram"] {
-    display: none;
-  }
-}
+
 .dc-related {
   margin-top: 2.5rem;
 }

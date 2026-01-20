@@ -163,36 +163,6 @@
           return;
         }
 
-        if (platform === 'instagram') {
-          if (navigator.share) {
-            try {
-              await navigator.share({
-                title: shareText,
-                text: shareText,
-                url: shareUrl,
-              });
-              updateLabel(button, 'Shared');
-              return;
-            } catch (err) {
-              console.warn('Native share failed/cancelled:', err);
-            }
-          }
-
-          if (isMobile) {
-            if (isAndroid) {
-              window.location = 'intent://instagram.com/#Intent;package=com.instagram.android;scheme=https;end';
-            } else if (isIOS) {
-              window.location = 'instagram://app';
-            }
-            copyLabel = 'Link copied - open IG';
-          } else {
-            openShareWindow('https://www.instagram.com/');
-          }
-          if (!isMobile) {
-            copyLabel = 'Link copied - paste in IG';
-          }
-        }
-
         if (platform === 'card') {
             // ... (existing card logic) ...
             const originalText = button.textContent;
