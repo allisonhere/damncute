@@ -867,6 +867,25 @@
   };
 
   const initForminatorFileClear = () => {
+    const ensureFilenameLabel = (field) => {
+      if (!field) return null;
+      let label = field.querySelector(':scope > span');
+      if (!label) {
+        label = document.createElement('span');
+        label.dataset.emptyText = 'No file selected';
+
+        const input = field.querySelector('input[type="file"]');
+        if (input) {
+          input.insertAdjacentElement('afterend', label);
+        } else {
+          field.appendChild(label);
+        }
+      }
+
+      label.classList.add('dc-upload-filename');
+      return label;
+    };
+
     const ensureClearButton = (field) => {
       if (!field) return null;
       let button = field.querySelector('.dc-upload-clear');
@@ -892,12 +911,23 @@
       if (!input) return;
       const field = input.closest('.forminator-file-upload');
       if (!field) return;
+      const label = ensureFilenameLabel(field);
       const clear = ensureClearButton(field);
-      if (!clear) return;
+      if (!clear || !label) return;
 
       const hasFile = !!(input.files && input.files.length);
+      const filename =
+        hasFile && input.files[0]?.name
+          ? input.files[0].name
+          : hasFile
+            ? input.value.split('\\').pop() || ''
+            : '';
+      const emptyText =
+        label.dataset.emptyText || label.textContent || 'No file selected';
+
       field.dataset.hasFile = hasFile ? '1' : '0';
       clear.style.display = hasFile ? 'inline-flex' : 'none';
+      label.textContent = hasFile ? filename : emptyText;
     };
 
     document

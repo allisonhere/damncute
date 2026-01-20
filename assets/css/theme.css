@@ -1601,10 +1601,11 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   display: block;
 }
 
-.forminator-ui.forminator-custom-form[data-design] .forminator-file-upload > span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.forminator-ui .forminator-file-upload > span.dc-upload-filename {
+  display: none;
+}
+
+.forminator-ui .forminator-file-upload[data-has-file="1"] > span.dc-upload-filename {
   display: block;
 }
 
@@ -1684,6 +1685,14 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 .forminator-ui .forminator-file-upload[data-has-file="1"] .dc-upload-clear {
   display: inline-flex;
+}
+
+.forminator-ui .forminator-file-upload[data-has-file="1"] .forminator-button-upload {
+  display: none;
+}
+
+.forminator-ui .forminator-file-upload[data-has-file="1"] input[type="file"].forminator-input-file-required {
+  display: none;
 }
 
 .forminator-ui .forminator-file-upload[data-has-file="0"] > span {
