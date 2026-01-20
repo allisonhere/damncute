@@ -1579,39 +1579,38 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .forminator-ui .forminator-file-upload {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem 0.75rem;
   align-items: center;
-  gap: 0.75rem;
   padding: 0.85rem 1rem;
   border: 1px dashed rgba(255, 255, 255, 0.2);
   border-radius: var(--dc-radius-sm);
   background: rgba(20, 20, 20, 0.6);
-  flex-wrap: wrap;
   position: relative;
 }
 
 .forminator-ui .forminator-file-upload > span {
   color: var(--dc-ink);
   opacity: 0.9;
-  flex: 1 1 12rem;
-  min-width: 8rem;
+  grid-column: 1;
+  min-width: 0;
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
-  display: inline-flex;
-  align-items: center;
+  display: block;
 }
 
 .forminator-ui.forminator-custom-form[data-design] .forminator-file-upload > span {
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
-  display: inline-flex;
-  align-items: center;
+  display: block;
 }
 
 .forminator-ui .forminator-file-upload .forminator-button-upload,
 .forminator-ui .forminator-file-upload .forminator-button-delete {
+  grid-column: 1 / -1;
   background: linear-gradient(135deg, #ff8a6b, #ff6b4a);
   color: #111;
   border: 0;
@@ -1650,6 +1649,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .forminator-ui .forminator-file-upload .dc-upload-clear {
+  grid-column: 2;
   background: transparent;
   color: #ff6b6b;
   border: 1px solid rgba(255, 107, 107, 0.6);
@@ -1665,8 +1665,11 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   justify-content: center;
   min-width: 2rem;
   min-height: 2rem;
-  flex: 0 0 auto;
   margin-left: 0.5rem;
+}
+
+.forminator-ui .forminator-file-upload input[type="file"].forminator-input-file-required {
+  grid-column: 1 / -1;
 }
 
 .forminator-ui .forminator-file-upload .dc-upload-clear:hover {
@@ -1850,36 +1853,14 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 @media (max-width: 640px), (hover: none) and (pointer: coarse) {
   .forminator-ui .forminator-file-upload {
-    display: flex;
-    flex-wrap: wrap;
-    row-gap: 0.6rem;
-    column-gap: 0.6rem;
-    align-items: center;
-  }
-
-  .forminator-ui .forminator-file-upload .forminator-button-upload,
-  .forminator-ui .forminator-file-upload .forminator-button-delete {
-    width: auto;
-    text-align: center;
-  }
-
-  .forminator-ui .forminator-file-upload .forminator-button-upload {
-    flex: 1 0 100%;
-    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .forminator-ui .forminator-file-upload > span {
     text-align: left;
-    flex: 1 1 auto;
-    min-width: 0;
-    width: auto;
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
-  }
-
-  .forminator-ui .forminator-file-upload input[type="file"].forminator-input-file-required {
-    flex: 1 0 100%;
   }
 
   .forminator-ui .forminator-file-upload input[type="file"].forminator-input-file-required {
