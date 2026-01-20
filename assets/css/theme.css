@@ -1598,13 +1598,16 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
+  display: inline-flex;
+  align-items: center;
 }
 
 .forminator-ui.forminator-custom-form[data-design] .forminator-file-upload > span {
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
-  display: block;
+  display: inline-flex;
+  align-items: center;
 }
 
 .forminator-ui .forminator-file-upload .forminator-button-upload,
@@ -1662,6 +1665,8 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   justify-content: center;
   min-width: 2rem;
   min-height: 2rem;
+  flex: 0 0 auto;
+  margin-left: 0.5rem;
 }
 
 .forminator-ui .forminator-file-upload .dc-upload-clear:hover {
