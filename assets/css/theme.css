@@ -857,6 +857,10 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   border-radius: var(--dc-radius-sm);
   padding: 0.8rem;
   background: var(--dc-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
 }
 
 .single-pets .dc-meta__item {
@@ -878,6 +882,13 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 .dc-meta__value {
   font-weight: 600;
+  line-height: 1.2;
+  display: block;
+}
+
+.dc-meta__value a {
+  display: inline;
+  line-height: inherit;
 }
 
 .single-pets .dc-meta__value {
