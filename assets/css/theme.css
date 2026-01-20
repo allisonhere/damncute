@@ -861,6 +861,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   flex-direction: column;
   justify-content: flex-start;
   height: 100%;
+  margin: 0 !important;
 }
 
 .single-pets .dc-meta__item {
