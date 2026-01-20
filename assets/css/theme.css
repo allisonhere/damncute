@@ -1579,38 +1579,38 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .forminator-ui .forminator-file-upload {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.6rem 0.75rem;
+  display: flex;
   align-items: center;
+  gap: 0.75rem;
   padding: 0.85rem 1rem;
   border: 1px dashed rgba(255, 255, 255, 0.2);
   border-radius: var(--dc-radius-sm);
   background: rgba(20, 20, 20, 0.6);
+  flex-wrap: nowrap;
   position: relative;
 }
 
 .forminator-ui .forminator-file-upload > span {
   color: var(--dc-ink);
   opacity: 0.9;
-  grid-column: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   display: block;
 }
 
 .forminator-ui.forminator-custom-form[data-design] .forminator-file-upload > span {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   display: block;
 }
 
 .forminator-ui .forminator-file-upload .forminator-button-upload,
 .forminator-ui .forminator-file-upload .forminator-button-delete {
-  grid-column: 1 / -1;
+  flex: 0 0 auto;
   background: linear-gradient(135deg, #ff8a6b, #ff6b4a);
   color: #111;
   border: 0;
@@ -1649,7 +1649,6 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 }
 
 .forminator-ui .forminator-file-upload .dc-upload-clear {
-  grid-column: 2;
   background: transparent;
   color: #ff6b6b;
   border: 1px solid rgba(255, 107, 107, 0.6);
@@ -1665,11 +1664,14 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   justify-content: center;
   min-width: 2rem;
   min-height: 2rem;
+  flex: 0 0 auto;
   margin-left: 0.5rem;
 }
 
 .forminator-ui .forminator-file-upload input[type="file"].forminator-input-file-required {
-  grid-column: 1 / -1;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
 }
 
 .forminator-ui .forminator-file-upload .dc-upload-clear:hover {
@@ -1682,6 +1684,12 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 .forminator-ui .forminator-file-upload[data-has-file="1"] .dc-upload-clear {
   display: inline-flex;
+}
+
+.forminator-ui .forminator-file-upload[data-has-file="0"] > span {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .forminator-ui .forminator-file-upload[data-has-file="1"] .forminator-button-delete {
@@ -1853,25 +1861,15 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 @media (max-width: 640px), (hover: none) and (pointer: coarse) {
   .forminator-ui .forminator-file-upload {
-    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.6rem;
   }
 
   .forminator-ui .forminator-file-upload > span {
     text-align: left;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
   }
 
   .forminator-ui .forminator-file-upload input[type="file"].forminator-input-file-required {
     text-align: center;
-  }
-
-  .forminator-ui .forminator-file-upload input[type="file"].forminator-input-file-required::file-selector-button,
-  .forminator-ui .forminator-file-upload input[type="file"].forminator-input-file-required::-webkit-file-upload-button {
-    display: block;
-    width: 100%;
-    margin: 0 0 0.5rem;
   }
 }
 
