@@ -867,11 +867,32 @@
   };
 
   const initForminatorFileClear = () => {
+    const ensureClearButton = (field) => {
+      if (!field) return null;
+      let button = field.querySelector('.dc-upload-clear');
+      if (button) return button;
+
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'dc-upload-clear';
+      button.setAttribute('aria-label', 'Clear selected file');
+      button.textContent = 'x';
+
+      const label = field.querySelector(':scope > span');
+      if (label) {
+        label.insertAdjacentElement('afterend', button);
+      } else {
+        field.appendChild(button);
+      }
+
+      return button;
+    };
+
     const updateField = (input) => {
       if (!input) return;
       const field = input.closest('.forminator-file-upload');
       if (!field) return;
-      const clear = field.querySelector('.forminator-button-delete');
+      const clear = ensureClearButton(field);
       if (!clear) return;
 
       const hasFile = !!(input.files && input.files.length);
@@ -897,17 +918,16 @@
     });
 
     document.addEventListener('click', (event) => {
-      const button = event.target.closest(
-        '.forminator-file-upload .forminator-button-delete'
-      );
+      const button = event.target.closest('.forminator-file-upload .dc-upload-clear');
       if (!button) return;
 
-      const input = button
-        .closest('.forminator-file-upload')
-        ?.querySelector('input[type="file"]');
+      const field = button.closest('.forminator-file-upload');
+      const input = field?.querySelector('input[type="file"]');
       if (!input) return;
 
-      window.setTimeout(() => updateField(input), 0);
+      input.value = '';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      updateField(input);
     });
   };
 

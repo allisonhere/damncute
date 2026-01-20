@@ -1646,8 +1646,42 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   display: none;
 }
 
+.forminator-ui .forminator-file-upload .dc-upload-clear {
+  background: transparent;
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.6);
+  border-radius: var(--dc-radius-sm);
+  padding: 0.25rem 0.5rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.forminator-ui .forminator-file-upload .dc-upload-clear:hover {
+  box-shadow: 0 6px 14px rgba(255, 107, 107, 0.35);
+}
+
+.forminator-ui .forminator-file-upload[data-has-file="0"] .dc-upload-clear {
+  display: none;
+}
+
+.forminator-ui .forminator-file-upload[data-has-file="1"] .dc-upload-clear {
+  display: inline-flex;
+}
+
 .forminator-ui .forminator-file-upload[data-has-file="1"] .forminator-button-delete {
   display: inline-flex !important;
+}
+
+.forminator-ui .forminator-file-upload .forminator-button-delete {
+  display: none !important;
 }
 
 .forminator-ui .forminator-file-upload .forminator-button-delete:hover {
