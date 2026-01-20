@@ -504,6 +504,54 @@ if (!function_exists('damncute_adoption_shortcode')) {
 }
 add_shortcode('damncute_adoption', 'damncute_adoption_shortcode');
 
+if (!function_exists('damncute_get_taxonomy_links')) {
+    function damncute_get_taxonomy_links(int $post_id, string $taxonomy): string {
+        $terms = get_the_terms($post_id, $taxonomy);
+        if (empty($terms) || is_wp_error($terms)) {
+            return '';
+        }
+        
+        $links = [];
+        foreach ($terms as $term) {
+            $link = get_term_link($term, $taxonomy);
+            if (is_wp_error($link)) {
+                continue;
+            }
+            $links[] = sprintf('<a href="%s" rel="tag">%s</a>', esc_url($link), esc_html($term->name));
+        }
+        
+        if (empty($links)) {
+            return '';
+        }
+
+        return sprintf(
+            '<div class="dc-card__meta">%s</div>', 
+            implode(', ', $links)
+        );
+    }
+}
+
+if (!function_exists('damncute_species_shortcode')) {
+    function damncute_species_shortcode(): string {
+        return damncute_get_taxonomy_links(get_the_ID(), 'species');
+    }
+}
+add_shortcode('damncute_species', 'damncute_species_shortcode');
+
+if (!function_exists('damncute_breed_shortcode')) {
+    function damncute_breed_shortcode(): string {
+        return damncute_get_taxonomy_links(get_the_ID(), 'breed');
+    }
+}
+add_shortcode('damncute_breed', 'damncute_breed_shortcode');
+
+if (!function_exists('damncute_vibe_shortcode')) {
+    function damncute_vibe_shortcode(): string {
+        return damncute_get_taxonomy_links(get_the_ID(), 'vibe');
+    }
+}
+add_shortcode('damncute_vibe', 'damncute_vibe_shortcode');
+
 if (!function_exists('damncute_reaction_map')) {
     function damncute_reaction_map(): array
     {
