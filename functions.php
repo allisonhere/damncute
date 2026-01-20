@@ -52,6 +52,10 @@ if (!function_exists('damncute_social_meta')) {
             $description = 'The internet’s cutest pets. Zero fluff. Just pure dopamine.';
         }
 
+        // Standard SEO
+        printf('<meta name="description" content="%s" />' . "\n", esc_attr($description));
+        printf('<link rel="canonical" href="%s" />' . "\n", esc_url($url));
+
         // OpenGraph
         printf('<meta property="og:type" content="website" />' . "\n");
         printf('<meta property="og:title" content="%s" />' . "\n", esc_attr($title));
@@ -72,6 +76,36 @@ if (!function_exists('damncute_social_meta')) {
     }
 }
 add_action('wp_head', 'damncute_social_meta', 5);
+
+if (!function_exists('damncute_schema_json_ld')) {
+    function damncute_schema_json_ld(): void {
+        if (!is_singular('pets')) {
+            return;
+        }
+
+        $post_id = get_the_ID();
+        $image_url = get_the_post_thumbnail_url($post_id, 'full');
+        $title = get_the_title();
+        $excerpt = get_the_excerpt();
+        
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'ImageObject',
+            'name' => $title,
+            'description' => $excerpt,
+            'url' => get_permalink(),
+            'contentUrl' => $image_url,
+            'author' => [
+                '@type' => 'Organization',
+                'name' => get_bloginfo('name')
+            ],
+            'datePublished' => get_the_date('c'),
+        ];
+        
+        printf('<script type="application/ld+json">%s</script>' . "\n", json_encode($schema));
+    }
+}
+add_action('wp_head', 'damncute_schema_json_ld');
 
 if (!function_exists('damncute_assets')) {
     function damncute_assets(): void
