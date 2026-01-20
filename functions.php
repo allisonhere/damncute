@@ -505,7 +505,7 @@ if (!function_exists('damncute_adoption_shortcode')) {
 add_shortcode('damncute_adoption', 'damncute_adoption_shortcode');
 
 if (!function_exists('damncute_get_taxonomy_links')) {
-    function damncute_get_taxonomy_links(int $post_id, string $taxonomy): string {
+    function damncute_get_taxonomy_links(int $post_id, string $taxonomy, string $label): string {
         $terms = get_the_terms($post_id, $taxonomy);
         if (empty($terms) || is_wp_error($terms)) {
             return '';
@@ -525,7 +525,8 @@ if (!function_exists('damncute_get_taxonomy_links')) {
         }
 
         return sprintf(
-            '<div class="dc-card__meta">%s</div>', 
+            '<div class="dc-meta__item"><span class="dc-meta__label">%s</span><span class="dc-meta__value">%s</span></div>',
+            esc_html($label),
             implode(', ', $links)
         );
     }
@@ -533,21 +534,21 @@ if (!function_exists('damncute_get_taxonomy_links')) {
 
 if (!function_exists('damncute_species_shortcode')) {
     function damncute_species_shortcode(): string {
-        return damncute_get_taxonomy_links(get_the_ID(), 'species');
+        return damncute_get_taxonomy_links(get_the_ID(), 'species', __('Species', 'damncute'));
     }
 }
 add_shortcode('damncute_species', 'damncute_species_shortcode');
 
 if (!function_exists('damncute_breed_shortcode')) {
     function damncute_breed_shortcode(): string {
-        return damncute_get_taxonomy_links(get_the_ID(), 'breed');
+        return damncute_get_taxonomy_links(get_the_ID(), 'breed', __('Breed', 'damncute'));
     }
 }
 add_shortcode('damncute_breed', 'damncute_breed_shortcode');
 
 if (!function_exists('damncute_vibe_shortcode')) {
     function damncute_vibe_shortcode(): string {
-        return damncute_get_taxonomy_links(get_the_ID(), 'vibe');
+        return damncute_get_taxonomy_links(get_the_ID(), 'vibe', __('Vibe', 'damncute'));
     }
 }
 add_shortcode('damncute_vibe', 'damncute_vibe_shortcode');
