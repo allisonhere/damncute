@@ -866,6 +866,51 @@
     });
   };
 
+  const initForminatorFileClear = () => {
+    const updateField = (input) => {
+      if (!input) return;
+      const field = input.closest('.forminator-file-upload');
+      if (!field) return;
+      const clear = field.querySelector('.forminator-button-delete');
+      if (!clear) return;
+
+      const hasFile = !!(input.files && input.files.length);
+      field.dataset.hasFile = hasFile ? '1' : '0';
+      clear.style.display = hasFile ? 'inline-flex' : 'none';
+    };
+
+    document
+      .querySelectorAll('.forminator-file-upload input[type="file"]')
+      .forEach((input) => updateField(input));
+
+    document.addEventListener('change', (event) => {
+      const input =
+        event.target instanceof HTMLInputElement
+          ? event.target
+          : null;
+      if (
+        input &&
+        input.matches('.forminator-file-upload input[type="file"]')
+      ) {
+        updateField(input);
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest(
+        '.forminator-file-upload .forminator-button-delete'
+      );
+      if (!button) return;
+
+      const input = button
+        .closest('.forminator-file-upload')
+        ?.querySelector('input[type="file"]');
+      if (!input) return;
+
+      window.setTimeout(() => updateField(input), 0);
+    });
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     initReactions();
     initShare();
@@ -879,5 +924,6 @@
     restoreFeedScroll();
     initRelatedLoadMore();
     initCommentToggle();
+    initForminatorFileClear();
   });
 })();

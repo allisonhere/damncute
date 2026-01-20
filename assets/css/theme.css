@@ -1628,18 +1628,53 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
   text-transform: none;
   letter-spacing: normal;
   font-size: 0.95rem;
+  font-weight: 800;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
 }
 
 .forminator-ui .forminator-file-upload .forminator-button-delete::before {
-  content: "×";
+  content: "x";
   font-size: 1.1rem;
 }
 
 .forminator-ui .forminator-file-upload .forminator-button-delete .forminator-icon-close {
+  display: none;
+}
+
+.forminator-ui .forminator-file-upload[data-has-file="1"] .forminator-button-delete {
+  display: inline-flex !important;
+}
+
+.forminator-ui .forminator-file-upload .forminator-button-delete:hover {
+  box-shadow: 0 6px 14px rgba(255, 107, 107, 0.35);
+}
+
+.forminator-ui .forminator-uploaded-file--delete {
+  background: transparent;
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.6);
+  border-radius: var(--dc-radius-sm);
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.forminator-ui .forminator-uploaded-file--delete::before {
+  content: "x";
+  font-size: 1.05rem;
+}
+
+.forminator-ui .forminator-uploaded-file--delete .forminator-icon-close {
   display: none;
 }
 
