@@ -829,7 +829,7 @@ header .wp-block-navigation .wp-block-navigation__container > li > a:focus-visib
 
 .dc-pet-title {
   font-size: clamp(2.5rem, 2rem + 2vw, 4rem);
-  font-family: "Space Grotesk", "Avenir Next Condensed", "Futura", "Impact", sans-serif;
+  font-family: var(--wp--preset--font-family--grotesk), "Space Grotesk", "Avenir Next Condensed", "Futura", "Impact", sans-serif;
   letter-spacing: 0.08em;
   line-height: 0.95;
   color: var(--dc-button);
