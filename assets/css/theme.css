@@ -135,7 +135,7 @@ p:empty {
 
 .single-pets .dc-section {
   padding-top: 0;
-  padding-bottom: 1rem;
+  padding-bottom: 0;
 }
 
 .single-pets .dc-pet-title {
